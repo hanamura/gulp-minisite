@@ -9,10 +9,11 @@ var minisite = require('../src');
 var create = function(filename, attr, body) {
   var contents = [];
 
-  if (attr) {
-    contents.push('---', yaml.safeDump(attr), '---');
-  }
-  if (body !== undefined) {
+  if (attr && body !== undefined) {
+    contents.push('---', yaml.safeDump(attr), '---', body);
+  } else if (attr) {
+    contents.push(yaml.safeDump(attr));
+  } else if (body !== undefined) {
     contents.push(body);
   }
   var content = contents.join('\n');
@@ -158,6 +159,33 @@ describe('gulp-minisite', function() {
           expect(e.message).to.have.string('same path');
           done();
         });
+    });
+
+    it('should accept YAML as document', function(done) {
+      array([create('hello.yaml', {
+        title: 'Hello',
+        description: 'Hello World',
+      })])
+        .pipe(minisite({dataDocument: ['yaml']}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.path).to.equal('/root/base/hello/index.html');
+          expect(file.data.title).to.equal('Hello');
+          expect(file.data.description).to.equal('Hello World');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should accept JSON as document', function(done) {
+      array([create('hello.json', null, '{"title":"Hello","description":"Hello World"}')])
+        .pipe(minisite({dataDocument: ['json']}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.path).to.equal('/root/base/hello/index.html');
+          expect(file.data.title).to.equal('Hello');
+          expect(file.data.description).to.equal('Hello World');
+        }))
+        .pipe(assert.end(done));
     });
 
   });
