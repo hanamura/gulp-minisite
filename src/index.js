@@ -1,0 +1,225 @@
+var PluginError = require('gulp-util').PluginError;
+var assign      = require('lodash.assign');
+var fm          = require('front-matter');
+var path        = require('path');
+var swig        = require('swig');
+var through     = require('through2');
+
+var parse = require('./parse');
+
+module.exports = function(options) {
+
+  options = assign({
+    defaultLocale: 'en',
+    locales:       ['en'],
+    site:          null,
+    swig:          swig,
+    template:      'template',
+    draft:         false,
+  }, options);
+
+  // ===
+  // ===
+
+  var vinyls = [];
+
+  // transform
+  // =========
+
+  var transform = function(vinyl, _, done) {
+    if (vinyl.isNull()) {
+      return done(null, vinyl);
+    }
+    if (vinyl.isStream()) {
+      return done(new PluginError('gulp-minisite', 'Streaming not supported'));
+    }
+
+    vinyls.push(vinyl);
+    return done();
+  };
+
+  // flush
+  // =====
+
+  var flush = function(done) {
+    if (!vinyls.length) {
+      return done();
+    }
+
+    // common data
+    // -----------
+
+    vinyls
+      .forEach(function(vinyl) {
+        var data = vinyl.data = parse(vinyl.relative, {locales: options.locales});
+
+        // locale
+        data.locale || (data.locale = options.defaultLocale);
+
+        // document
+        data.document = fm.test(vinyl.contents.toString());
+
+        // filepaths
+        data.filepaths = [];
+        data.filepaths.push(data.locale === options.defaultLocale ? null : data.locale);
+        data.filepaths.push.apply(data.filepaths, data.dirnames);
+        if (data.document) {
+          data.filepaths.push(data.index ? null : data.slug);
+          data.filepaths.push('index.html');
+        } else {
+          data.filepaths.push(data.slug + '.' + data.extname);
+        }
+        data.filepaths = data.filepaths.filter(function(x) { return x });
+
+        // filepath
+        data.filepath = path.join.apply(path, data.filepaths);
+
+        // filepath
+        vinyl.path = path.join(vinyl.base, data.filepath);
+      });
+
+    // check error
+    // -----------
+
+    vinyls
+      .reduce(function(paths, vinyl) {
+        if (vinyl.path in paths) {
+          done(new PluginError('gulp-minisite', [
+            'creating two files into the same path: ' + vinyl.path,
+            'file 1: ' + paths[vinyl.path].data.source,
+            'file 2: ' + vinyl.data.source,
+          ].join('\n')));
+        }
+        paths[vinyl.path] = vinyl;
+        return paths;
+      }, {});
+
+    // document data
+    // -------------
+
+    vinyls
+      .filter(function(vinyl) { return vinyl.data.document })
+      .map(function(vinyl) {
+        var data = vinyl.data;
+
+        // resourceId
+        data.resourceId = data.dirnames.join('/');
+        data.resourceId += data.index ? '' : '/' + data.slug;
+
+        // collectionId
+        data.collectionId = data.dirnames.join('/');
+
+        // paths
+        data.paths = data.filepaths.slice(0, -1);
+        data.paths.unshift('/');
+
+        // path
+        data.path = path.join.apply(path, data.paths);
+
+        // locales
+        data.locales = {};
+
+        // attr & body
+        var fmData       = fm(vinyl.contents.toString());
+        data.data        = fmData.attributes;
+        data.template    = fmData.attributes.template;
+        data.title       = fmData.attributes.title;
+        data.description = fmData.attributes.description;
+        data.body        = fmData.body;
+
+        return data;
+      })
+      .forEach(function(data, i, dataList) {
+        dataList
+          .filter(function(d) { return !d.draft || options.draft })
+          .filter(function(d) { return d.resourceId === data.resourceId })
+          .forEach(function(d) { data.locales[d.locale] = d });
+      });
+
+    // document collections
+    // --------------------
+
+    var sortees = [];
+    var collections = vinyls
+      .filter(function(vinyl) { return vinyl.data.document })
+      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
+      .filter(function(vinyl) { return !vinyl.data.index })
+      .reduce(function(collections, vinyl) {
+        var locale = vinyl.data.locale;
+        var id     = vinyl.data.collectionId;
+        if (locale) {
+          collections[locale]     || (collections[locale]     = {});
+          collections[locale][id] || sortees.push(collections[locale][id] = []);
+          collections[locale][id].push(vinyl.data);
+        } else {
+          collections[id] || sortees.push(collections[id] = []);
+          collections[id].push(vinyl.data);
+        }
+        return collections;
+      }, {});
+
+    // sort collections
+
+    sortees.forEach(function(collection) {
+      collection.sort(function(a, b) {
+        var aOrder = a.order;
+        var bOrder = b.order;
+
+        if (aOrder !== undefined && bOrder !== undefined) {
+          if (aOrder < bOrder) { return -1 }
+          if (aOrder > bOrder) { return 1 }
+        } else if (aOrder !== undefined) {
+          return 1;
+        } else if (bOrder !== undefined) {
+          return -1;
+        }
+
+        var aSlug = a.slug;
+        var bSlug = b.slug;
+
+        if (aSlug < bSlug) { return -1 }
+        if (aSlug > bSlug) { return 1 }
+
+        return 0;
+      });
+    });
+
+    // document rendering
+    // ------------------
+
+    vinyls
+      .filter(function(vinyl) { return vinyl.data.document })
+      .forEach(function(vinyl) {
+        var data = vinyl.data;
+
+        if (data.template) {
+          var tmplPath = path.join(options.template, data.template + '.html');
+          var rendered = swig.renderFile(tmplPath, {
+            site:        options.site,
+            page:        vinyl.data,
+            collections: collections,
+          });
+          vinyl.contents = new Buffer(rendered, 'utf8');
+        } else {
+          vinyl.contents = new Buffer(vinyl.data.body, 'utf8');
+        }
+      });
+
+    // pipe
+    // ----
+
+    vinyls
+      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
+      .forEach(this.push.bind(this));
+
+    // done
+    // ----
+
+    return done();
+  };
+
+  // through
+  // =======
+
+  return through.obj(transform, flush);
+};

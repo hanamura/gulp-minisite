@@ -1,0 +1,36 @@
+{
+  "name": "gulp-minisite",
+  "version": "0.1.0",
+  "description": "Limited static site generator for Gulp.",
+  "main": "src/index.js",
+  "license": "MIT",
+  "dependencies": {
+    "front-matter": "1.0.0",
+    "gulp-util": "3.0.4",
+    "lodash.assign": "3.2.0",
+    "swig": "1.4.2",
+    "through2": "0.6.5"
+  },
+  "devDependencies": {
+    "chai": "2.3.0",
+    "js-yaml": "3.3.1",
+    "mocha": "2.2.5",
+    "stream-array": "1.1.0",
+    "stream-assert": "2.0.2"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hanamura/gulp-minisite.git"
+  },
+  "author": "Taro Hanamura <m@hanamurataro.com> (http://hanamurataro.com/)",
+  "bugs": {
+    "url": "https://github.com/hanamura/gulp-minisite/issues"
+  },
+  "homepage": "https://github.com/hanamura/gulp-minisite#readme"
+}
