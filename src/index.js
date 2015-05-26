@@ -4,6 +4,7 @@ var fm          = require('front-matter');
 var path        = require('path');
 var swig        = require('swig');
 var through     = require('through2');
+var yaml        = require('js-yaml');
 
 var parse = require('./parse');
 
@@ -16,6 +17,7 @@ module.exports = function(options) {
     swig:          swig,
     template:      'template',
     draft:         false,
+    dataDocument:  [],
   }, options);
 
   // ===
@@ -57,7 +59,13 @@ module.exports = function(options) {
         data.locale || (data.locale = options.defaultLocale);
 
         // document
-        data.document = fm.test(vinyl.contents.toString());
+        if (~options.dataDocument.indexOf(data.extname)) {
+          data.document = 'data';
+        } else if (fm.test(vinyl.contents.toString())) {
+          data.document = 'text';
+        } else {
+          data.document = false;
+        }
 
         // filepaths
         data.filepaths = [];
@@ -119,13 +127,18 @@ module.exports = function(options) {
         // locales
         data.locales = {};
 
-        // attr & body
-        var fmData       = fm(vinyl.contents.toString());
-        data.data        = fmData.attributes;
-        data.template    = fmData.attributes.template;
-        data.title       = fmData.attributes.title;
-        data.description = fmData.attributes.description;
-        data.body        = fmData.body;
+        // data & body
+        if (data.document === 'data') {
+          data.data = yaml.safeLoad(vinyl.contents.toString());
+          data.body = '';
+        } else if (data.document === 'text') {
+          var fmData = fm(vinyl.contents.toString());
+          data.data  = fmData.attributes;
+          data.body  = fmData.body;
+        }
+        data.template    = data.data.template;
+        data.title       = data.data.title;
+        data.description = data.data.description;
 
         return data;
       })
