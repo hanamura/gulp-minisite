@@ -16,6 +16,7 @@ module.exports = function(options) {
     swig:          swig,
     template:      'template',
     draft:         false,
+    dataDocument:  [],
   }, options);
 
   // ===
