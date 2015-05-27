@@ -8,6 +8,8 @@ var yaml        = require('js-yaml');
 
 var parse = require('./parse');
 
+swig.setDefaults({cache: false});
+
 module.exports = function(options) {
 
   options = assign({
