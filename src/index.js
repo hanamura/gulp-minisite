@@ -113,8 +113,7 @@ module.exports = function(options) {
         var data = vinyl.data;
 
         // resourceId
-        data.resourceId = data.dirnames.join('/');
-        data.resourceId += data.index ? '' : '/' + data.slug;
+        data.resourceId = data.dirnames.concat(data.index ? [] : [data.slug]).join('/');
 
         // collectionId
         data.collectionId = data.dirnames.join('/');

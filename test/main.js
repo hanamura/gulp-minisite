@@ -199,5 +199,41 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should have consistent resource id', function(done) {
+      array([
+        create('foo.md', {}, ''),
+        create('bar/baz.md', {}, ''),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(2))
+        .pipe(assert.first(function(file) {
+          expect(file.data.resourceId).to.equal('foo');
+        }))
+        .pipe(assert.second(function(file) {
+          expect(file.data.resourceId).to.equal('bar/baz');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should have the same resource id if only a locale differs', function(done) {
+      array([
+        create('foo.md', {}, ''),
+        create('bar/baz.md', {}, ''),
+        create('foo.ja.md', {}, ''),
+      ])
+        .pipe(minisite({locales: ['en', 'ja'], defaultLocale: 'en'}))
+        .pipe(assert.length(3))
+        .pipe(assert.first(function(file) {
+          expect(file.data.resourceId).to.equal('foo');
+        }))
+        .pipe(assert.second(function(file) {
+          expect(file.data.resourceId).to.equal('bar/baz');
+        }))
+        .pipe(assert.nth(3, function(file) {
+          expect(file.data.resourceId).to.equal('foo');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 });
