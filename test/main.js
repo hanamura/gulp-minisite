@@ -292,5 +292,22 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should be able to refer by resource id', function(done) {
+      array([
+        create('foo.md', {template: true, title: 'FOO'}, ''),
+        create('bar/baz.md', {title: 'BAZ'}, ''),
+      ])
+        .pipe(minisite({templateEngine: function(_, tmplData) {
+          expect(tmplData.references['foo'].title).to.equal('FOO');
+          expect(tmplData.references['bar/baz'].title).to.equal('BAZ');
+          return tmplData.page.title;
+        }}))
+        .pipe(assert.length(2))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('FOO');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 });
