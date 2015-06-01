@@ -132,6 +132,7 @@ module.exports = function(options) {
         // data & body
         if (data.document === 'data') {
           data.data = yaml.safeLoad(vinyl.contents.toString());
+          (data.data === undefined) && (data.data = {});
           data.body = '';
         } else if (data.document === 'text') {
           var fmData = fm(vinyl.contents.toString());
