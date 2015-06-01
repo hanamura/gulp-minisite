@@ -188,5 +188,16 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should accept empty YAML', function(done) {
+      array([create('hello.yaml', null, '')])
+        .pipe(minisite({dataDocument: ['yaml']}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.path).to.equal('/root/base/hello/index.html');
+          expect(file.data).to.not.be.undefined;
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 });
