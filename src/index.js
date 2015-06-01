@@ -209,7 +209,7 @@ module.exports = function(options) {
 
         if (data.template) {
           var tmplPath = path.join(options.template, data.template);
-          var rendered = swig.renderFile(tmplPath, {
+          var rendered = options.swig.renderFile(tmplPath, {
             site:        options.site,
             page:        vinyl.data,
             collections: collections,
