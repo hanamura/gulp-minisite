@@ -199,5 +199,21 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should have consistent resource id', function(done) {
+      array([
+        create('foo.md', {}, ''),
+        create('bar/baz.md', {}, ''),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(2))
+        .pipe(assert.first(function(file) {
+          expect(file.data.resourceId).to.equal('foo');
+        }))
+        .pipe(assert.second(function(file) {
+          expect(file.data.resourceId).to.equal('bar/baz');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 });
