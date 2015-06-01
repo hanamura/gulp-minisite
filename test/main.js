@@ -309,5 +309,30 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should be able to refer by locale and resource id', function(done) {
+      array([
+        create('foo.md', {template: true, title: 'FOO'}, ''),
+        create('bar/baz.md', {title: 'BAZ'}, ''),
+        create('foo.ja.md', {title: 'FOO J'}, ''),
+        create('bar/baz.ja.md', {title: 'BAZ J'}, ''),
+      ])
+        .pipe(minisite({
+          locales: ['en', 'ja'],
+          defaultLocale: 'en',
+          templateEngine: function(_, tmplData) {
+            expect(tmplData.references.en['foo'].title).to.equal('FOO');
+            expect(tmplData.references.en['bar/baz'].title).to.equal('BAZ');
+            expect(tmplData.references.ja['foo'].title).to.equal('FOO J');
+            expect(tmplData.references.ja['bar/baz'].title).to.equal('BAZ J');
+            return tmplData.page.title;
+          },
+        }))
+        .pipe(assert.length(4))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('FOO');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 });
