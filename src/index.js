@@ -10,8 +10,8 @@ var parse = require('./parse');
 module.exports = function(options) {
 
   options = assign({
-    defaultLocale:  'en',
-    locales:        ['en'],
+    defaultLocale:  null,
+    locales:        null,
     site:           null,
     templateEngine: require('./engines/nunjucks')(),
     draft:          false,
