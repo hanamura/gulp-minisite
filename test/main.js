@@ -207,6 +207,23 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should not treat YAML as document if dataExtensions option is null', function(done) {
+      array([create('hello.yaml', {
+        title: 'Hello',
+        description: 'Hello World',
+      })])
+        .pipe(minisite({dataExtensions: null}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.data.document).to.be.false;
+          var attr = yaml.safeLoad(file.contents.toString());
+          expect(attr.title).to.equal('Hello');
+          expect(attr.description).to.equal('Hello World');
+        }))
+        .pipe(assert.end(done));
+
+    });
+
     it('should have consistent resource id', function(done) {
       array([
         create('foo.md', {}, ''),
