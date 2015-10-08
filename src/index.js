@@ -195,6 +195,26 @@ module.exports = function(options) {
       });
     });
 
+    // indexes to have collections
+
+    vinyls
+      .filter(function(vinyl) { return vinyl.data.document })
+      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
+      .filter(function(vinyl) { return vinyl.data.index })
+      .forEach(function(vinyl) {
+        var locale = vinyl.data.locale;
+        var id     = vinyl.data.collectionId;
+        if (locale) {
+          if (collections[locale] && collections[locale][id]) {
+            vinyl.data.collection = collections[locale][id];
+          } else {
+            vinyl.data.collection = [];
+          }
+        } else {
+          vinyl.data.collection = collections[id] || [];
+        }
+      });
+
     // references
     // ==========
 
