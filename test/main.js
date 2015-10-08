@@ -26,6 +26,14 @@ var create = function(filename, attr, body) {
   });
 };
 
+var createEngine = function(tmpl) {
+  var nunjucks = require('nunjucks');
+  nunjucks.configure({noCache: true});
+  return function(_, tmplData) {
+    return nunjucks.renderString(tmpl, tmplData);
+  };
+};
+
 describe('gulp-minisite', function() {
   describe('minisite()', function() {
 
@@ -231,6 +239,40 @@ describe('gulp-minisite', function() {
         }))
         .pipe(assert.nth(3, function(file) {
           expect(file.data.resourceId).to.equal('foo');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should render HTML with template engine (default)', function(done) {
+      array([create('hello.yaml', {
+        template: 'root.html',
+        title: 'Hello',
+        description: 'World',
+      })])
+        .pipe(minisite({
+          dataDocument: ['yaml'],
+          templateEngine: require('../src/engines/nunjucks')({path: 'test/template'}),
+        }))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString().trim()).to.equal('Hello - World');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should render HTML with template engine (for test)', function(done) {
+      array([create('hello.yaml', {
+        template: true,
+        title: 'Hello',
+        description: 'World',
+      })])
+        .pipe(minisite({
+          dataDocument: ['yaml'],
+          templateEngine: createEngine('{{ page.title }} - {{ page.description }}'),
+        }))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString().trim()).to.equal('Hello - World');
         }))
         .pipe(assert.end(done));
     });
