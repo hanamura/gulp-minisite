@@ -2,24 +2,20 @@ var PluginError = require('gulp-util').PluginError;
 var assign      = require('lodash.assign');
 var fm          = require('front-matter');
 var path        = require('path');
-var swig        = require('swig');
 var through     = require('through2');
 var yaml        = require('js-yaml');
 
 var parse = require('./parse');
 
-swig.setDefaults({cache: false});
-
 module.exports = function(options) {
 
   options = assign({
-    defaultLocale: 'en',
-    locales:       ['en'],
-    site:          null,
-    swig:          swig,
-    template:      'template',
-    draft:         false,
-    dataDocument:  [],
+    defaultLocale:  'en',
+    locales:        ['en'],
+    site:           null,
+    templateEngine: require('./engines/nunjucks')(),
+    draft:          false,
+    dataDocument:   [],
   }, options);
 
   // ===
@@ -208,13 +204,13 @@ module.exports = function(options) {
         var data = vinyl.data;
 
         if (data.template) {
-          var tmplPath = path.join(options.template, data.template);
-          var rendered = options.swig.renderFile(tmplPath, {
+          var tmplName = data.template;
+          var tmplData = {
             site:        options.site,
             page:        vinyl.data,
             collections: collections,
-          });
-          vinyl.contents = new Buffer(rendered, 'utf8');
+          };
+          vinyl.contents = new Buffer(options.templateEngine(tmplName, tmplData), 'utf8');
         } else {
           vinyl.contents = new Buffer(vinyl.data.body, 'utf8');
         }
