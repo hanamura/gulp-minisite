@@ -27,10 +27,10 @@ var create = function(filename, attr, body) {
 };
 
 var createEngine = function(tmpl) {
-  var swig = require('swig');
-  swig.setDefaults({cache: false});
+  var nunjucks = require('nunjucks');
+  nunjucks.configure({noCache: true});
   return function(_, tmplData) {
-    return swig.render(tmpl, {locals: tmplData});
+    return nunjucks.renderString(tmpl, tmplData);
   };
 };
 
