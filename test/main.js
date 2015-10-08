@@ -251,7 +251,7 @@ describe('gulp-minisite', function() {
       })])
         .pipe(minisite({
           dataDocument: ['yaml'],
-          templateEngine: require('../src/engines/swig')({path: 'test/template'}),
+          templateEngine: require('../src/engines/nunjucks')({path: 'test/template'}),
         }))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {

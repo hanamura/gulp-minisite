@@ -13,7 +13,7 @@ module.exports = function(options) {
     defaultLocale:  'en',
     locales:        ['en'],
     site:           null,
-    templateEngine: require('./engines/swig')(),
+    templateEngine: require('./engines/nunjucks')(),
     draft:          false,
     dataDocument:   [],
   }, options);
