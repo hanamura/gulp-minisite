@@ -334,5 +334,56 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should be able to collect page data by collection id', function(done) {
+      array([
+        create('items/#1.foo.yaml', {title: 'FOO', template: true}),
+        create('items/#2.bar.yaml', {title: 'BAR'}),
+        create('items/#3.baz.yaml', {title: 'BAZ'}),
+      ])
+        .pipe(minisite({templateEngine: function(_, tmplData) {
+          expect(tmplData.collections['items']).to.have.length(3);
+          expect(tmplData.collections['items'][0].title).to.equal('FOO');
+          expect(tmplData.collections['items'][1].title).to.equal('BAR');
+          expect(tmplData.collections['items'][2].title).to.equal('BAZ');
+          return tmplData.page.title;
+        }}))
+        .pipe(assert.length(3))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('FOO');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should be able to collect page data by locale and collection id', function(done) {
+      array([
+        create('items/#1.foo.yaml', {title: 'FOO', template: true}),
+        create('items/#2.bar.yaml', {title: 'BAR'}),
+        create('items/#3.baz.yaml', {title: 'BAZ'}),
+        create('items/#1.foo.ja.yaml', {title: 'FOO J'}),
+        create('items/#2.bar.ja.yaml', {title: 'BAR J'}),
+        create('items/#3.baz.ja.yaml', {title: 'BAZ J'}),
+      ])
+        .pipe(minisite({
+          locales: ['en', 'ja'],
+          defaultLocale: 'en',
+          templateEngine: function(_, tmplData) {
+            expect(tmplData.collections.en['items']).to.have.length(3);
+            expect(tmplData.collections.en['items'][0].title).to.equal('FOO');
+            expect(tmplData.collections.en['items'][1].title).to.equal('BAR');
+            expect(tmplData.collections.en['items'][2].title).to.equal('BAZ');
+            expect(tmplData.collections.ja['items']).to.have.length(3);
+            expect(tmplData.collections.ja['items'][0].title).to.equal('FOO J');
+            expect(tmplData.collections.ja['items'][1].title).to.equal('BAR J');
+            expect(tmplData.collections.ja['items'][2].title).to.equal('BAZ J');
+            return tmplData.page.title;
+          },
+        }))
+        .pipe(assert.length(6))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('FOO');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 });
