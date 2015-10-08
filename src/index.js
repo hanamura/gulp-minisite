@@ -2,24 +2,20 @@ var PluginError = require('gulp-util').PluginError;
 var assign      = require('lodash.assign');
 var fm          = require('front-matter');
 var path        = require('path');
-var swig        = require('swig');
 var through     = require('through2');
 var yaml        = require('js-yaml');
 
 var parse = require('./parse');
 
-swig.setDefaults({cache: false});
-
 module.exports = function(options) {
 
   options = assign({
-    defaultLocale: 'en',
-    locales:       ['en'],
-    site:          null,
-    swig:          swig,
-    template:      'template',
-    draft:         false,
-    dataDocument:  [],
+    defaultLocale:  null,
+    locales:        null,
+    site:           null,
+    templateEngine: require('./engines/nunjucks')(),
+    draft:          false,
+    dataExtensions: ['yml', 'yaml', 'json'],
   }, options);
 
   // ===
@@ -61,7 +57,7 @@ module.exports = function(options) {
         data.locale || (data.locale = options.defaultLocale);
 
         // document
-        if (~options.dataDocument.indexOf(data.extname)) {
+        if (options.dataExtensions && ~options.dataExtensions.indexOf(data.extname)) {
           data.document = 'data';
         } else if (fm.test(vinyl.contents.toString())) {
           data.document = 'text';
@@ -199,6 +195,24 @@ module.exports = function(options) {
       });
     });
 
+    // references
+    // ==========
+
+    var references = vinyls
+      .filter(function(vinyl) { return vinyl.data.document })
+      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
+      .reduce(function(references, vinyl) {
+        var locale = vinyl.data.locale;
+        var id     = vinyl.data.resourceId;
+        if (locale) {
+          references[locale] || (references[locale] = {});
+          references[locale][id] = vinyl.data;
+        } else {
+          references[id] = vinyl.data;
+        }
+        return references;
+      }, {});
+
     // document rendering
     // ------------------
 
@@ -208,13 +222,14 @@ module.exports = function(options) {
         var data = vinyl.data;
 
         if (data.template) {
-          var tmplPath = path.join(options.template, data.template);
-          var rendered = options.swig.renderFile(tmplPath, {
+          var tmplName = data.template;
+          var tmplData = {
             site:        options.site,
             page:        vinyl.data,
             collections: collections,
-          });
-          vinyl.contents = new Buffer(rendered, 'utf8');
+            references:  references,
+          };
+          vinyl.contents = new Buffer(options.templateEngine(tmplName, tmplData), 'utf8');
         } else {
           vinyl.contents = new Buffer(vinyl.data.body, 'utf8');
         }

@@ -45,6 +45,7 @@ module.exports = function(source, options) {
     } else {
       data.slug = matches[2];
     }
+    data.locale = null;
   }
 
   // index

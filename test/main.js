@@ -26,6 +26,14 @@ var create = function(filename, attr, body) {
   });
 };
 
+var createEngine = function(tmpl) {
+  var nunjucks = require('nunjucks');
+  nunjucks.configure({noCache: true});
+  return function(_, tmplData) {
+    return nunjucks.renderString(tmpl, tmplData);
+  };
+};
+
 describe('gulp-minisite', function() {
   describe('minisite()', function() {
 
@@ -166,7 +174,7 @@ describe('gulp-minisite', function() {
         title: 'Hello',
         description: 'Hello World',
       })])
-        .pipe(minisite({dataDocument: ['yaml']}))
+        .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
           expect(file.path).to.equal('/root/base/hello/index.html');
@@ -178,7 +186,7 @@ describe('gulp-minisite', function() {
 
     it('should accept JSON as document', function(done) {
       array([create('hello.json', null, '{"title":"Hello","description":"Hello World"}')])
-        .pipe(minisite({dataDocument: ['json']}))
+        .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
           expect(file.path).to.equal('/root/base/hello/index.html');
@@ -190,13 +198,30 @@ describe('gulp-minisite', function() {
 
     it('should accept empty YAML', function(done) {
       array([create('hello.yaml', null, '')])
-        .pipe(minisite({dataDocument: ['yaml']}))
+        .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
           expect(file.path).to.equal('/root/base/hello/index.html');
           expect(file.data).to.not.be.undefined;
         }))
         .pipe(assert.end(done));
+    });
+
+    it('should not treat YAML as document if dataExtensions option is null', function(done) {
+      array([create('hello.yaml', {
+        title: 'Hello',
+        description: 'Hello World',
+      })])
+        .pipe(minisite({dataExtensions: null}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.data.document).to.be.false;
+          var attr = yaml.safeLoad(file.contents.toString());
+          expect(attr.title).to.equal('Hello');
+          expect(attr.description).to.equal('Hello World');
+        }))
+        .pipe(assert.end(done));
+
     });
 
     it('should have consistent resource id', function(done) {
@@ -231,6 +256,80 @@ describe('gulp-minisite', function() {
         }))
         .pipe(assert.nth(3, function(file) {
           expect(file.data.resourceId).to.equal('foo');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should render HTML with template engine (default)', function(done) {
+      array([create('hello.yaml', {
+        template: 'root.html',
+        title: 'Hello',
+        description: 'World',
+      })])
+        .pipe(minisite({
+          templateEngine: require('../src/engines/nunjucks')({path: 'test/template'}),
+        }))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString().trim()).to.equal('Hello - World');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should render HTML with template engine (for test)', function(done) {
+      array([create('hello.yaml', {
+        template: true,
+        title: 'Hello',
+        description: 'World',
+      })])
+        .pipe(minisite({
+          templateEngine: createEngine('{{ page.title }} - {{ page.description }}'),
+        }))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString().trim()).to.equal('Hello - World');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should be able to refer by resource id', function(done) {
+      array([
+        create('foo.md', {template: true, title: 'FOO'}, ''),
+        create('bar/baz.md', {title: 'BAZ'}, ''),
+      ])
+        .pipe(minisite({templateEngine: function(_, tmplData) {
+          expect(tmplData.references['foo'].title).to.equal('FOO');
+          expect(tmplData.references['bar/baz'].title).to.equal('BAZ');
+          return tmplData.page.title;
+        }}))
+        .pipe(assert.length(2))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('FOO');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should be able to refer by locale and resource id', function(done) {
+      array([
+        create('foo.md', {template: true, title: 'FOO'}, ''),
+        create('bar/baz.md', {title: 'BAZ'}, ''),
+        create('foo.ja.md', {title: 'FOO J'}, ''),
+        create('bar/baz.ja.md', {title: 'BAZ J'}, ''),
+      ])
+        .pipe(minisite({
+          locales: ['en', 'ja'],
+          defaultLocale: 'en',
+          templateEngine: function(_, tmplData) {
+            expect(tmplData.references.en['foo'].title).to.equal('FOO');
+            expect(tmplData.references.en['bar/baz'].title).to.equal('BAZ');
+            expect(tmplData.references.ja['foo'].title).to.equal('FOO J');
+            expect(tmplData.references.ja['bar/baz'].title).to.equal('BAZ J');
+            return tmplData.page.title;
+          },
+        }))
+        .pipe(assert.length(4))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('FOO');
         }))
         .pipe(assert.end(done));
     });
