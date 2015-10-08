@@ -174,7 +174,7 @@ describe('gulp-minisite', function() {
         title: 'Hello',
         description: 'Hello World',
       })])
-        .pipe(minisite({dataExtensions: ['yaml']}))
+        .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
           expect(file.path).to.equal('/root/base/hello/index.html');
@@ -186,7 +186,7 @@ describe('gulp-minisite', function() {
 
     it('should accept JSON as document', function(done) {
       array([create('hello.json', null, '{"title":"Hello","description":"Hello World"}')])
-        .pipe(minisite({dataExtensions: ['json']}))
+        .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
           expect(file.path).to.equal('/root/base/hello/index.html');
@@ -198,7 +198,7 @@ describe('gulp-minisite', function() {
 
     it('should accept empty YAML', function(done) {
       array([create('hello.yaml', null, '')])
-        .pipe(minisite({dataExtensions: ['yaml']}))
+        .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
           expect(file.path).to.equal('/root/base/hello/index.html');
@@ -250,7 +250,6 @@ describe('gulp-minisite', function() {
         description: 'World',
       })])
         .pipe(minisite({
-          dataExtensions: ['yaml'],
           templateEngine: require('../src/engines/nunjucks')({path: 'test/template'}),
         }))
         .pipe(assert.length(1))
@@ -267,7 +266,6 @@ describe('gulp-minisite', function() {
         description: 'World',
       })])
         .pipe(minisite({
-          dataExtensions: ['yaml'],
           templateEngine: createEngine('{{ page.title }} - {{ page.description }}'),
         }))
         .pipe(assert.length(1))

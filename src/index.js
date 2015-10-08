@@ -15,7 +15,7 @@ module.exports = function(options) {
     site:           null,
     templateEngine: require('./engines/nunjucks')(),
     draft:          false,
-    dataExtensions: [],
+    dataExtensions: ['yml', 'yaml', 'json'],
   }, options);
 
   // ===
