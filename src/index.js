@@ -15,7 +15,7 @@ module.exports = function(options) {
     site:           null,
     templateEngine: require('./engines/nunjucks')(),
     draft:          false,
-    dataDocument:   [],
+    dataExtensions: [],
   }, options);
 
   // ===
@@ -57,7 +57,7 @@ module.exports = function(options) {
         data.locale || (data.locale = options.defaultLocale);
 
         // document
-        if (~options.dataDocument.indexOf(data.extname)) {
+        if (~options.dataExtensions.indexOf(data.extname)) {
           data.document = 'data';
         } else if (fm.test(vinyl.contents.toString())) {
           data.document = 'text';
