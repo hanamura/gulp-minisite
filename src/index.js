@@ -195,6 +195,24 @@ module.exports = function(options) {
       });
     });
 
+    // references
+    // ==========
+
+    var references = vinyls
+      .filter(function(vinyl) { return vinyl.data.document })
+      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
+      .reduce(function(references, vinyl) {
+        var locale = vinyl.data.locale;
+        var id     = vinyl.data.resourceId;
+        if (locale) {
+          references[locale] || (references[locale] = {});
+          references[locale][id] = vinyl.data;
+        } else {
+          references[id] = vinyl.data;
+        }
+        return references;
+      }, {});
+
     // document rendering
     // ------------------
 
@@ -209,6 +227,7 @@ module.exports = function(options) {
             site:        options.site,
             page:        vinyl.data,
             collections: collections,
+            references:  references,
           };
           vinyl.contents = new Buffer(options.templateEngine(tmplName, tmplData), 'utf8');
         } else {
