@@ -385,5 +385,57 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should make index to have its collection', function(done) {
+      array([
+        create('items/index.yaml', {}),
+        create('items/#1.foo.yaml', {title: 'FOO'}),
+        create('items/#2.bar.yaml', {title: 'BAR'}),
+        create('items/#3.baz.yaml', {title: 'BAZ'}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(4))
+        .pipe(assert.first(function(file) {
+          expect(file.data.collection).to.be.an('array');
+          expect(file.data.collection).to.have.length(3);
+          expect(file.data.collection[0].title).to.equal('FOO');
+          expect(file.data.collection[1].title).to.equal('BAR');
+          expect(file.data.collection[2].title).to.equal('BAZ');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should make index to have its collection (multiple locale)', function(done) {
+      array([
+        create('items/index.yaml', {}),
+        create('items/#1.foo.yaml', {title: 'FOO'}),
+        create('items/#2.bar.yaml', {title: 'BAR'}),
+        create('items/#3.baz.yaml', {title: 'BAZ'}),
+        create('items/index.ja.yaml', {}),
+        create('items/#1.foo.ja.yaml', {title: 'FOO J'}),
+        create('items/#2.bar.ja.yaml', {title: 'BAR J'}),
+        create('items/#3.baz.ja.yaml', {title: 'BAZ J'}),
+      ])
+        .pipe(minisite({
+          locales: ['en', 'ja'],
+          defaultLocale: 'en',
+        }))
+        .pipe(assert.length(8))
+        .pipe(assert.first(function(file) {
+          expect(file.data.collection).to.be.an('array');
+          expect(file.data.collection).to.have.length(3);
+          expect(file.data.collection[0].title).to.equal('FOO');
+          expect(file.data.collection[1].title).to.equal('BAR');
+          expect(file.data.collection[2].title).to.equal('BAZ');
+        }))
+        .pipe(assert.nth(4, function(file) {
+          expect(file.data.collection).to.be.an('array');
+          expect(file.data.collection).to.have.length(3);
+          expect(file.data.collection[0].title).to.equal('FOO J');
+          expect(file.data.collection[1].title).to.equal('BAR J');
+          expect(file.data.collection[2].title).to.equal('BAZ J');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 });
