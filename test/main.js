@@ -174,7 +174,7 @@ describe('gulp-minisite', function() {
         title: 'Hello',
         description: 'Hello World',
       })])
-        .pipe(minisite({dataDocument: ['yaml']}))
+        .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
           expect(file.path).to.equal('/root/base/hello/index.html');
@@ -186,7 +186,7 @@ describe('gulp-minisite', function() {
 
     it('should accept JSON as document', function(done) {
       array([create('hello.json', null, '{"title":"Hello","description":"Hello World"}')])
-        .pipe(minisite({dataDocument: ['json']}))
+        .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
           expect(file.path).to.equal('/root/base/hello/index.html');
@@ -198,13 +198,30 @@ describe('gulp-minisite', function() {
 
     it('should accept empty YAML', function(done) {
       array([create('hello.yaml', null, '')])
-        .pipe(minisite({dataDocument: ['yaml']}))
+        .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
           expect(file.path).to.equal('/root/base/hello/index.html');
           expect(file.data).to.not.be.undefined;
         }))
         .pipe(assert.end(done));
+    });
+
+    it('should not treat YAML as document if dataExtensions option is null', function(done) {
+      array([create('hello.yaml', {
+        title: 'Hello',
+        description: 'Hello World',
+      })])
+        .pipe(minisite({dataExtensions: null}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.data.document).to.be.false;
+          var attr = yaml.safeLoad(file.contents.toString());
+          expect(attr.title).to.equal('Hello');
+          expect(attr.description).to.equal('Hello World');
+        }))
+        .pipe(assert.end(done));
+
     });
 
     it('should have consistent resource id', function(done) {
@@ -250,7 +267,6 @@ describe('gulp-minisite', function() {
         description: 'World',
       })])
         .pipe(minisite({
-          dataDocument: ['yaml'],
           templateEngine: require('../src/engines/nunjucks')({path: 'test/template'}),
         }))
         .pipe(assert.length(1))
@@ -267,7 +283,6 @@ describe('gulp-minisite', function() {
         description: 'World',
       })])
         .pipe(minisite({
-          dataDocument: ['yaml'],
           templateEngine: createEngine('{{ page.title }} - {{ page.description }}'),
         }))
         .pipe(assert.length(1))

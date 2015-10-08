@@ -10,12 +10,12 @@ var parse = require('./parse');
 module.exports = function(options) {
 
   options = assign({
-    defaultLocale:  'en',
-    locales:        ['en'],
+    defaultLocale:  null,
+    locales:        null,
     site:           null,
     templateEngine: require('./engines/nunjucks')(),
     draft:          false,
-    dataDocument:   [],
+    dataExtensions: ['yml', 'yaml', 'json'],
   }, options);
 
   // ===
@@ -57,7 +57,7 @@ module.exports = function(options) {
         data.locale || (data.locale = options.defaultLocale);
 
         // document
-        if (~options.dataDocument.indexOf(data.extname)) {
+        if (options.dataExtensions && ~options.dataExtensions.indexOf(data.extname)) {
           data.document = 'data';
         } else if (fm.test(vinyl.contents.toString())) {
           data.document = 'text';
