@@ -160,7 +160,7 @@ module.exports = function(options) {
           pages.push(vinyl.data);
         }
         return pages;
-      }, options.locales && options.locales.length ? {} : []);
+      }, []);
 
     // document collections
     // --------------------
