@@ -148,7 +148,7 @@ module.exports = function(options) {
       });
 
     // pages
-    // =====
+    // -----
 
     var pages = vinyls
       .filter(function(vinyl) { return vinyl.data.document })
@@ -233,7 +233,7 @@ module.exports = function(options) {
       });
 
     // references
-    // ==========
+    // ----------
 
     var references = vinyls
       .filter(function(vinyl) { return vinyl.data.document })
