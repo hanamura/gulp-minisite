@@ -1,7 +1,7 @@
 {
   "name": "gulp-minisite",
   "version": "2.0.1",
-  "description": "Limited static site generator for Gulp.",
+  "description": "Static site generator for Gulp ecosystem.",
   "main": "src/index.js",
   "license": "MIT",
   "dependencies": {
