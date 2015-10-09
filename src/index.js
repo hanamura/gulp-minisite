@@ -148,7 +148,7 @@ module.exports = function(options) {
       });
 
     // pages
-    // =====
+    // -----
 
     var pages = vinyls
       .filter(function(vinyl) { return vinyl.data.document })
@@ -233,7 +233,7 @@ module.exports = function(options) {
       });
 
     // references
-    // ==========
+    // ----------
 
     var references = vinyls
       .filter(function(vinyl) { return vinyl.data.document })
@@ -256,10 +256,8 @@ module.exports = function(options) {
     vinyls
       .filter(function(vinyl) { return vinyl.data.document })
       .forEach(function(vinyl) {
-        var data = vinyl.data;
-
-        if (data.template) {
-          var tmplName = data.template;
+        if (vinyl.data.template) {
+          var tmplName = vinyl.data.template;
           var tmplData = {
             site:        options.site,
             page:        vinyl.data,
