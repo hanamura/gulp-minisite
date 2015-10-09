@@ -485,5 +485,16 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should have shallow attribute access', function(done) {
+      array([create('hello.yaml', {title: 'Hello', myData: 'World'})])
+        .pipe(minisite())
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.data.title).to.equal('Hello');
+          expect(file.data.myData).to.equal('World');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 });

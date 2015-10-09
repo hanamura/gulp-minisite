@@ -250,6 +250,21 @@ module.exports = function(options) {
         return references;
       }, {});
 
+    // shallow attribute access
+    // ------------------------
+
+    vinyls
+      .filter(function(vinyl) { return vinyl.data.document })
+      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
+      .forEach(function(vinyl) {
+        for (var key in vinyl.data.data) {
+          if (key in vinyl.data) {
+            continue;
+          }
+          vinyl.data[key] = vinyl.data.data[key];
+        }
+      });
+
     // document rendering
     // ------------------
 
