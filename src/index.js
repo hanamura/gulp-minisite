@@ -138,9 +138,6 @@ module.exports = function(options) {
           data.data  = fmData.attributes;
           data.body  = fmData.body;
         }
-        data.template    = data.data.template;
-        data.title       = data.data.title;
-        data.description = data.data.description;
 
         return data;
       })
