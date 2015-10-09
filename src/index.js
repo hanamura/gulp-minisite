@@ -49,8 +49,8 @@ module.exports = function(options) {
     // common data
     // -----------
 
-    vinyls
-      .forEach(function(vinyl) {
+    vinyls = vinyls
+      .map(function(vinyl) {
         var data = vinyl.data = parse(vinyl.relative, {locales: options.locales});
 
         // locale
@@ -82,7 +82,10 @@ module.exports = function(options) {
 
         // filepath
         vinyl.path = path.join(vinyl.base, data.filepath);
-      });
+
+        return vinyl;
+      })
+      .filter(function(vinyl) { return !vinyl.data.draft || options.draft });
 
     // check error
     // -----------
@@ -142,7 +145,6 @@ module.exports = function(options) {
       })
       .forEach(function(data, i, dataList) {
         dataList
-          .filter(function(d) { return !d.draft || options.draft })
           .filter(function(d) { return d.resourceId === data.resourceId })
           .forEach(function(d) { data.locales[d.locale] = d });
       });
@@ -152,7 +154,6 @@ module.exports = function(options) {
 
     var pages = vinyls
       .filter(function(vinyl) { return vinyl.data.document })
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
       .reduce(function(pages, vinyl) {
         var locale = vinyl.data.locale;
         if (locale) {
@@ -170,7 +171,6 @@ module.exports = function(options) {
     var sortees = [];
     var collections = vinyls
       .filter(function(vinyl) { return vinyl.data.document })
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
       .filter(function(vinyl) { return !vinyl.data.index })
       .reduce(function(collections, vinyl) {
         var locale = vinyl.data.locale;
@@ -216,7 +216,6 @@ module.exports = function(options) {
 
     vinyls
       .filter(function(vinyl) { return vinyl.data.document })
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
       .filter(function(vinyl) { return vinyl.data.index })
       .forEach(function(vinyl) {
         var locale = vinyl.data.locale;
@@ -237,7 +236,6 @@ module.exports = function(options) {
 
     var references = vinyls
       .filter(function(vinyl) { return vinyl.data.document })
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
       .reduce(function(references, vinyl) {
         var locale = vinyl.data.locale;
         var id     = vinyl.data.resourceId;
@@ -255,7 +253,6 @@ module.exports = function(options) {
 
     vinyls
       .filter(function(vinyl) { return vinyl.data.document })
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
       .forEach(function(vinyl) {
         for (var key in vinyl.data.data) {
           if (key in vinyl.data) {
@@ -290,7 +287,6 @@ module.exports = function(options) {
     // ----
 
     vinyls
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
       .forEach(this.push.bind(this));
 
     // done
