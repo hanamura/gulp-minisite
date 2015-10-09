@@ -106,8 +106,9 @@ module.exports = function(options) {
     // document data
     // -------------
 
-    vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
+    var docs = vinyls.filter(function(vinyl) { return vinyl.data.document });
+
+    docs
       .map(function(vinyl) {
         var data = vinyl.data;
 
@@ -152,8 +153,7 @@ module.exports = function(options) {
     // pages
     // -----
 
-    var pages = vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
+    var pages = docs
       .reduce(function(pages, vinyl) {
         var locale = vinyl.data.locale;
         if (locale) {
@@ -169,8 +169,7 @@ module.exports = function(options) {
     // --------------------
 
     var sortees = [];
-    var collections = vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
+    var collections = docs
       .filter(function(vinyl) { return !vinyl.data.index })
       .reduce(function(collections, vinyl) {
         var locale = vinyl.data.locale;
@@ -214,8 +213,7 @@ module.exports = function(options) {
 
     // indexes to have collections
 
-    vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
+    docs
       .filter(function(vinyl) { return vinyl.data.index })
       .forEach(function(vinyl) {
         var locale = vinyl.data.locale;
@@ -234,8 +232,7 @@ module.exports = function(options) {
     // references
     // ----------
 
-    var references = vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
+    var references = docs
       .reduce(function(references, vinyl) {
         var locale = vinyl.data.locale;
         var id     = vinyl.data.resourceId;
@@ -251,8 +248,7 @@ module.exports = function(options) {
     // shallow attribute access
     // ------------------------
 
-    vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
+    docs
       .forEach(function(vinyl) {
         for (var key in vinyl.data.data) {
           if (key in vinyl.data) {
@@ -265,8 +261,7 @@ module.exports = function(options) {
     // document rendering
     // ------------------
 
-    vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
+    docs
       .forEach(function(vinyl) {
         if (vinyl.data.template) {
           var tmplName = vinyl.data.template;
