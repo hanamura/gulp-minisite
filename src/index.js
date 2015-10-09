@@ -147,6 +147,23 @@ module.exports = function(options) {
           .forEach(function(d) { data.locales[d.locale] = d });
       });
 
+    // pages
+    // =====
+
+    var pages = vinyls
+      .filter(function(vinyl) { return vinyl.data.document })
+      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
+      .reduce(function(pages, vinyl) {
+        var locale = vinyl.data.locale;
+        if (locale) {
+          pages[locale] || (pages[locale] = []);
+          pages[locale].push(vinyl.data);
+        } else {
+          pages.push(vinyl.data);
+        }
+        return pages;
+      }, options.locales && options.locales.length ? {} : []);
+
     // document collections
     // --------------------
 
@@ -246,6 +263,7 @@ module.exports = function(options) {
           var tmplData = {
             site:        options.site,
             page:        vinyl.data,
+            pages:       pages,
             collections: collections,
             references:  references,
           };

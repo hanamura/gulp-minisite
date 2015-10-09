@@ -437,5 +437,53 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should have all pages in template data', function(done) {
+      array([
+        create('foo.yaml', {title: 'FOO', template: true}),
+        create('bar.yaml', {title: 'BAR'}),
+        create('items/index.yaml', {}),
+        create('items/baz.yaml', {title: 'BAZ'}),
+        create('items/qux.yaml', {title: 'QUX'}),
+      ])
+        .pipe(minisite({templateEngine: function(_, tmplData) {
+          expect(tmplData.pages).to.have.length(5);
+          return tmplData.page.title;
+        }}))
+        .pipe(assert.length(5))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('FOO');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should have all pages in template data (multiple locale)', function(done) {
+      array([
+        create('foo.yaml', {title: 'FOO', template: true}),
+        create('bar.yaml', {title: 'BAR'}),
+        create('items/index.yaml', {}),
+        create('items/baz.yaml', {title: 'BAZ'}),
+        create('items/qux.yaml', {title: 'QUX'}),
+        create('foo.ja.yaml', {title: 'FOO J'}),
+        create('bar.ja.yaml', {title: 'BAR J'}),
+        create('items/index.ja.yaml', {}),
+        create('items/baz.ja.yaml', {title: 'BAZ J'}),
+        create('items/qux.ja.yaml', {title: 'QUX J'}),
+      ])
+        .pipe(minisite({
+          locales: ['en', 'ja'],
+          defaultLocale: 'en',
+          templateEngine: function(_, tmplData) {
+            expect(tmplData.pages.en).to.have.length(5);
+            expect(tmplData.pages.ja).to.have.length(5);
+            return tmplData.page.title;
+          },
+        }))
+        .pipe(assert.length(10))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('FOO');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 });
