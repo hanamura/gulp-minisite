@@ -84,7 +84,7 @@ describe('gulp-minisite', function() {
       var PluginError = require('gulp-util').PluginError;
       array([
         create('hello.md', {}, ''),
-        create('hello.yaml', {}),
+        create('hello.yml', {}),
       ])
         .pipe(minisite())
         .on('error', function(e) {
@@ -95,7 +95,7 @@ describe('gulp-minisite', function() {
     });
 
     it('should treat YAML as document', function(done) {
-      array([create('hello.yaml', {
+      array([create('hello.yml', {
         title: 'Hello',
         description: 'Hello World',
       })])
@@ -122,7 +122,7 @@ describe('gulp-minisite', function() {
     });
 
     it('should accept empty YAML', function(done) {
-      array([create('hello.yaml', null, '')])
+      array([create('hello.yml', null, '')])
         .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -133,7 +133,7 @@ describe('gulp-minisite', function() {
     });
 
     it('should not treat YAML as document if dataExtensions is null', function(done) {
-      array([create('hello.yaml', {
+      array([create('hello.yml', {
         title: 'Hello',
         description: 'Hello World',
       })])
@@ -315,7 +315,7 @@ describe('gulp-minisite', function() {
   describe('template engine', function() {
 
     it('should render content by default', function(done) {
-      array([create('hello.yaml', {
+      array([create('hello.yml', {
         template: 'hello.html',
         title: 'Hello',
         description: 'World',
@@ -331,7 +331,7 @@ describe('gulp-minisite', function() {
     });
 
     it('should render content with custom engine', function(done) {
-      array([create('hello.yaml', {
+      array([create('hello.yml', {
         template: true,
         title: 'Hello',
         description: 'World',
@@ -351,7 +351,7 @@ describe('gulp-minisite', function() {
     });
 
     it('should inherit template', function(done) {
-      array([create('hello.yaml', {
+      array([create('hello.yml', {
         template: 'pages/hello.html',
         title: 'Hello',
       })])
@@ -366,7 +366,7 @@ describe('gulp-minisite', function() {
     });
 
     it('should include template', function(done) {
-      array([create('hello.yaml', {
+      array([create('hello.yml', {
         template: 'pages/hello.html',
         title: 'Hello',
       })])
@@ -402,7 +402,7 @@ describe('gulp-minisite', function() {
   describe('template variable: page', function() {
 
     it('should have shallow attribute access', function(done) {
-      array([create('hello.yaml', {title: 'Hello', myData: 'World'})])
+      array([create('hello.yml', {title: 'Hello', myData: 'World'})])
         .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -421,10 +421,10 @@ describe('gulp-minisite', function() {
 
     it('should have collection related to index page', function(done) {
       array([
-        create('items/index.yaml', {}),
-        create('items/#1.foo.yaml', {title: 'FOO'}),
-        create('items/#2.bar.yaml', {title: 'BAR'}),
-        create('items/#3.baz.yaml', {title: 'BAZ'}),
+        create('items/index.yml', {}),
+        create('items/#1.foo.yml', {title: 'FOO'}),
+        create('items/#2.bar.yml', {title: 'BAR'}),
+        create('items/#3.baz.yml', {title: 'BAZ'}),
       ])
         .pipe(minisite())
         .pipe(assert.length(4))
@@ -440,14 +440,14 @@ describe('gulp-minisite', function() {
 
     it('should have collection related to index page (with locales)', function(done) {
       array([
-        create('items/index.yaml', {}),
-        create('items/#1.foo.yaml', {title: 'FOO'}),
-        create('items/#2.bar.yaml', {title: 'BAR'}),
-        create('items/#3.baz.yaml', {title: 'BAZ'}),
-        create('items/index.ja.yaml', {}),
-        create('items/#1.foo.ja.yaml', {title: 'FOO J'}),
-        create('items/#2.bar.ja.yaml', {title: 'BAR J'}),
-        create('items/#3.baz.ja.yaml', {title: 'BAZ J'}),
+        create('items/index.yml', {}),
+        create('items/#1.foo.yml', {title: 'FOO'}),
+        create('items/#2.bar.yml', {title: 'BAR'}),
+        create('items/#3.baz.yml', {title: 'BAZ'}),
+        create('items/index.ja.yml', {}),
+        create('items/#1.foo.ja.yml', {title: 'FOO J'}),
+        create('items/#2.bar.ja.yml', {title: 'BAR J'}),
+        create('items/#3.baz.ja.yml', {title: 'BAZ J'}),
       ])
         .pipe(minisite({
           locales: ['en', 'ja'],
@@ -480,11 +480,11 @@ describe('gulp-minisite', function() {
 
     it('should contain all pages', function(done) {
       array([
-        create('foo.yaml', {title: 'FOO', template: true}),
-        create('bar.yaml', {title: 'BAR'}),
-        create('items/index.yaml', {}),
-        create('items/baz.yaml', {title: 'BAZ'}),
-        create('items/qux.yaml', {title: 'QUX'}),
+        create('foo.yml', {title: 'FOO', template: true}),
+        create('bar.yml', {title: 'BAR'}),
+        create('items/index.yml', {}),
+        create('items/baz.yml', {title: 'BAZ'}),
+        create('items/qux.yml', {title: 'QUX'}),
       ])
         .pipe(minisite({templateEngine: function(_, tmplData) {
           expect(tmplData.pages).to.have.length(5);
@@ -499,16 +499,16 @@ describe('gulp-minisite', function() {
 
     it('should contain all pages (with locales)', function(done) {
       array([
-        create('foo.yaml', {title: 'FOO', template: true}),
-        create('bar.yaml', {title: 'BAR'}),
-        create('items/index.yaml', {}),
-        create('items/baz.yaml', {title: 'BAZ'}),
-        create('items/qux.yaml', {title: 'QUX'}),
-        create('foo.ja.yaml', {title: 'FOO J'}),
-        create('bar.ja.yaml', {title: 'BAR J'}),
-        create('items/index.ja.yaml', {}),
-        create('items/baz.ja.yaml', {title: 'BAZ J'}),
-        create('items/qux.ja.yaml', {title: 'QUX J'}),
+        create('foo.yml', {title: 'FOO', template: true}),
+        create('bar.yml', {title: 'BAR'}),
+        create('items/index.yml', {}),
+        create('items/baz.yml', {title: 'BAZ'}),
+        create('items/qux.yml', {title: 'QUX'}),
+        create('foo.ja.yml', {title: 'FOO J'}),
+        create('bar.ja.yml', {title: 'BAR J'}),
+        create('items/index.ja.yml', {}),
+        create('items/baz.ja.yml', {title: 'BAZ J'}),
+        create('items/qux.ja.yml', {title: 'QUX J'}),
       ])
         .pipe(minisite({
           locales: ['en', 'ja'],
@@ -584,11 +584,11 @@ describe('gulp-minisite', function() {
 
     it('should refer to collection of pages by collection id', function(done) {
       array([
-        create('items/foo.yaml', {title: 'FOO', template: true}),
-        create('items/bar.yaml', {title: 'BAR'}),
-        create('items/baz.yaml', {title: 'BAZ'}),
-        create('products/category/foo.yaml', {title: 'FOO'}),
-        create('products/category/bar.yaml', {title: 'BAR'}),
+        create('items/foo.yml', {title: 'FOO', template: true}),
+        create('items/bar.yml', {title: 'BAR'}),
+        create('items/baz.yml', {title: 'BAZ'}),
+        create('products/category/foo.yml', {title: 'FOO'}),
+        create('products/category/bar.yml', {title: 'BAR'}),
       ])
         .pipe(minisite({templateEngine: function(_, tmplData) {
           expect(tmplData.collections['items']).to.be.an('array');
@@ -606,12 +606,12 @@ describe('gulp-minisite', function() {
 
     it('should refer to collection of pages by collection id (with locales)', function(done) {
       array([
-        create('items/foo.yaml', {title: 'FOO', template: true}),
-        create('items/bar.yaml', {title: 'BAR'}),
-        create('items/baz.yaml', {title: 'BAZ'}),
-        create('items/foo.ja.yaml', {title: 'FOO J'}),
-        create('items/bar.ja.yaml', {title: 'BAR J'}),
-        create('items/baz.ja.yaml', {title: 'BAZ J'}),
+        create('items/foo.yml', {title: 'FOO', template: true}),
+        create('items/bar.yml', {title: 'BAR'}),
+        create('items/baz.yml', {title: 'BAZ'}),
+        create('items/foo.ja.yml', {title: 'FOO J'}),
+        create('items/bar.ja.yml', {title: 'BAR J'}),
+        create('items/baz.ja.yml', {title: 'BAZ J'}),
       ])
         .pipe(minisite({
           locales: ['en', 'ja'],
@@ -633,9 +633,9 @@ describe('gulp-minisite', function() {
 
     it('should sort documents in collection by order part of filename', function(done) {
       array([
-        create('items/#2.bar.yaml', {title: 'BAR', template: true}),
-        create('items/#3.baz.yaml', {title: 'BAZ'}),
-        create('items/#1.foo.yaml', {title: 'FOO'}),
+        create('items/#2.bar.yml', {title: 'BAR', template: true}),
+        create('items/#3.baz.yml', {title: 'BAZ'}),
+        create('items/#1.foo.yml', {title: 'FOO'}),
       ])
         .pipe(minisite({templateEngine: function(_, tmplData) {
           expect(tmplData.collections['items']).to.be.an('array');
