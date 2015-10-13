@@ -26,18 +26,14 @@ var create = function(filename, attr, body) {
   });
 };
 
-var createEngine = function(tmpl) {
-  var nunjucks = require('nunjucks');
-  nunjucks.configure({noCache: true});
-  return function(_, tmplData) {
-    return nunjucks.renderString(tmpl, tmplData);
-  };
-};
-
 describe('gulp-minisite', function() {
-  describe('minisite()', function() {
 
-    it('should output HTML', function(done) {
+  // filename/filepath transformer
+  // =============================
+
+  describe('filename/filepath transformer (basic)', function() {
+
+    it('should transform document into HTML', function(done) {
       array([create('hello.md', {}, '')])
         .pipe(minisite())
         .pipe(assert.length(1))
@@ -47,83 +43,13 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
-    it('should not output draft', function(done) {
-      array([create('_hello.md', {}, '')])
-        .pipe(minisite())
-        .pipe(assert.length(0))
-        .pipe(assert.end(done));
-    });
-
-    it('should output draft if options.draft is true', function(done) {
-      array([create('_hello.md', {}, '')])
-        .pipe(minisite({draft: true}))
-        .pipe(assert.length(1))
-        .pipe(assert.end(done));
-    });
-
-    it('should strip underscore of draft', function(done) {
-      array([create('_hello.md', {}, '')])
-        .pipe(minisite({draft: true}))
-        .pipe(assert.length(1))
-        .pipe(assert.first(function(file) {
-          expect(file.path).to.equal('/root/base/hello/index.html');
-        }))
-        .pipe(assert.end(done));
-    })
-
-    it('should take file as draft if any parent directory starts with underscore', function(done) {
-      array([create('path/_to/hello.md', {}, '')])
-        .pipe(minisite())
-        .pipe(assert.length(0))
-        .pipe(assert.end(done));
-    });
-
-    it('should rearrange file path by locale', function(done) {
-      array([create('hello.ja.md', {}, '')])
-        .pipe(minisite({locales: ['ja'], defaultLocale: null}))
-        .pipe(assert.length(1))
-        .pipe(assert.first(function(file) {
-          expect(file.path).to.equal('/root/base/ja/hello/index.html');
-        }))
-        .pipe(assert.end(done));
-    });
-
-    it('should understand default locale', function(done) {
-      array([create('hello.ja.md', {}, '')])
-        .pipe(minisite({locales: ['ja'], defaultLocale: 'ja'}))
-        .pipe(assert.length(1))
-        .pipe(assert.first(function(file) {
-          expect(file.path).to.equal('/root/base/hello/index.html');
-        }))
-        .pipe(assert.end(done));
-    });
-
-    it('should strip order part of filename', function(done) {
-      array([create('#01.hello.md', {}, '')])
-        .pipe(minisite())
-        .pipe(assert.length(1))
-        .pipe(assert.first(function(file) {
-          expect(file.path).to.equal('/root/base/hello/index.html');
-        }))
-        .pipe(assert.end(done));
-    });
-
-    it('should not transform from file into HTML if it has no attributes', function(done) {
-      array([create('hello.md', null, '')])
+    it('should not transform file if it is not a document', function(done) {
+      array([create('hello.md', null, 'Hello')])
         .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
           expect(file.path).to.equal('/root/base/hello.md');
-        }))
-        .pipe(assert.end(done));
-    });
-
-    it('should rearrange file path by locale even if it has no attributes', function(done) {
-      array([create('hello.ja.md', null, '')])
-        .pipe(minisite({locales: ['ja'], defaultLocale: null}))
-        .pipe(assert.length(1))
-        .pipe(assert.first(function(file) {
-          expect(file.path).to.equal('/root/base/ja/hello.md');
+          expect(file.contents.toString().trim()).to.equal('Hello');
         }))
         .pipe(assert.end(done));
     });
@@ -154,12 +80,11 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
-    it('should throw PluginError if two files have the same file path', function(done) {
+    it('should throw PluginError if two files have the same path', function(done) {
       var PluginError = require('gulp-util').PluginError;
-
       array([
-        create('#01.hello.md', {}, ''),
-        create('#02.hello.md', {}, ''),
+        create('hello.md', {}, ''),
+        create('hello.yaml', {}),
       ])
         .pipe(minisite())
         .on('error', function(e) {
@@ -169,7 +94,7 @@ describe('gulp-minisite', function() {
         });
     });
 
-    it('should accept YAML as document', function(done) {
+    it('should treat YAML as document', function(done) {
       array([create('hello.yaml', {
         title: 'Hello',
         description: 'Hello World',
@@ -184,7 +109,7 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
-    it('should accept JSON as document', function(done) {
+    it('should treat JSON as document', function(done) {
       array([create('hello.json', null, '{"title":"Hello","description":"Hello World"}')])
         .pipe(minisite())
         .pipe(assert.length(1))
@@ -207,7 +132,7 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
-    it('should not treat YAML as document if dataExtensions option is null', function(done) {
+    it('should not treat YAML as document if dataExtensions is null', function(done) {
       array([create('hello.yaml', {
         title: 'Hello',
         description: 'Hello World',
@@ -221,10 +146,9 @@ describe('gulp-minisite', function() {
           expect(attr.description).to.equal('Hello World');
         }))
         .pipe(assert.end(done));
-
     });
 
-    it('should have consistent resource id', function(done) {
+    it('should give document consistent resource id', function(done) {
       array([
         create('foo.md', {}, ''),
         create('bar/baz.md', {}, ''),
@@ -240,27 +164,157 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
-    it('should have the same resource id if only a locale differs', function(done) {
+    it('should strip order part from filename', function(done) {
+      array([create('#01.hello.md', {}, '')])
+        .pipe(minisite())
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.path).to.equal('/root/base/hello/index.html');
+        }))
+        .pipe(assert.end(done));
+    });
+
+  });
+
+  // locale
+  // ------
+
+  describe('filename/filepath transformer (locale)', function() {
+
+    it('should prefix locale to path', function(done) {
+      array([create('hello.ja.md', {}, '')])
+        .pipe(minisite({locales: ['ja']}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.path).to.equal('/root/base/ja/hello/index.html');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should prefix locale to path even if it is not a document', function(done) {
+      array([create('hello.ja.md', null, '')])
+        .pipe(minisite({locales: ['ja']}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.path).to.equal('/root/base/ja/hello.md');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should not prefix locale to path if it is default locale', function(done) {
+      array([create('hello.ja.md', {}, '')])
+        .pipe(minisite({locales: ['ja'], defaultLocale: 'ja'}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.path).to.equal('/root/base/hello/index.html');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should assign default locale to document if it is specified', function(done) {
+      array([create('hello.md', {}, '')])
+        .pipe(minisite({locales: ['ja'], defaultLocale: 'ja'}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.data.locale).to.equal('ja');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should not assign any locale to document if default locale is not specified', function(done) {
+      array([create('hello.md', {}, '')])
+        .pipe(minisite({locales: ['ja']}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.data.locale).to.not.be.ok;
+          expect(file.path).to.equal('/root/base/hello/index.html');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should ignore unknown locale', function(done) {
+      array([create('hello.ja.md', {}, '')])
+        .pipe(minisite({locales: ['en']}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.path).to.equal('/root/base/hello.ja/index.html');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should give documents the same resource id if only a locale differs', function(done) {
       array([
         create('foo.md', {}, ''),
         create('bar/baz.md', {}, ''),
         create('foo.ja.md', {}, ''),
+        create('bar/baz.ja.md', {}, ''),
       ])
         .pipe(minisite({locales: ['en', 'ja'], defaultLocale: 'en'}))
-        .pipe(assert.length(3))
+        .pipe(assert.length(4))
         .pipe(assert.first(function(file) {
           expect(file.data.resourceId).to.equal('foo');
         }))
         .pipe(assert.second(function(file) {
           expect(file.data.resourceId).to.equal('bar/baz');
         }))
-        .pipe(assert.nth(3, function(file) {
+        .pipe(assert.nth(2, function(file) {
           expect(file.data.resourceId).to.equal('foo');
+        }))
+        .pipe(assert.nth(3, function(file) {
+          expect(file.data.resourceId).to.equal('bar/baz');
         }))
         .pipe(assert.end(done));
     });
 
-    it('should render HTML with template engine (default)', function(done) {
+  });
+
+  // draft
+  // -----
+
+  describe('filename/filepath transformer (draft)', function() {
+
+    it('should not output draft by default', function(done) {
+      array([create('_hello.md', {}, '')])
+        .pipe(minisite())
+        .pipe(assert.length(0))
+        .pipe(assert.end(done));
+    });
+
+    it('should output draft if specified', function(done) {
+      array([create('_hello.md', {}, '')])
+        .pipe(minisite({draft: true}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.data.draft).to.be.true;
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should strip underscore from filename of draft', function(done) {
+      array([create('_hello.md', {}, '')])
+        .pipe(minisite({draft: true}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.path).to.equal('/root/base/hello/index.html');
+        }))
+        .pipe(assert.end(done));
+    })
+
+    it('should treat document as draft if any parent directory is marked as draft', function(done) {
+      array([create('path/_to/hello.md', {}, '')])
+        .pipe(minisite())
+        .pipe(assert.length(0))
+        .pipe(assert.end(done));
+    });
+
+  });
+
+  // template engine
+  // ===============
+
+  describe('template engine', function() {
+
+    it('should render content by default', function(done) {
       array([create('hello.yaml', {
         template: 'root.html',
         title: 'Hello',
@@ -276,14 +330,18 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
-    it('should render HTML with template engine (for test)', function(done) {
+    it('should render content with custom engine', function(done) {
       array([create('hello.yaml', {
         template: true,
         title: 'Hello',
         description: 'World',
       })])
         .pipe(minisite({
-          templateEngine: createEngine('{{ page.title }} - {{ page.description }}'),
+          templateEngine: function(_, tmplData) {
+            var nunjucks = require('nunjucks');
+            nunjucks.configure({noCache: true});
+            return nunjucks.renderString('{{ page.title }} - {{ page.description }}', tmplData);
+          },
         }))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -292,100 +350,32 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
-    it('should be able to refer by resource id', function(done) {
-      array([
-        create('foo.md', {template: true, title: 'FOO'}, ''),
-        create('bar/baz.md', {title: 'BAZ'}, ''),
-      ])
-        .pipe(minisite({templateEngine: function(_, tmplData) {
-          expect(tmplData.references['foo'].title).to.equal('FOO');
-          expect(tmplData.references['bar/baz'].title).to.equal('BAZ');
-          return tmplData.page.title;
-        }}))
-        .pipe(assert.length(2))
+  });
+
+  // template variable: page
+  // =======================
+
+  describe('template variable: page', function() {
+
+    it('should have shallow attribute access', function(done) {
+      array([create('hello.yaml', {title: 'Hello', myData: 'World'})])
+        .pipe(minisite())
+        .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
-          expect(file.contents.toString()).to.equal('FOO');
+          expect(file.data.title).to.equal('Hello');
+          expect(file.data.myData).to.equal('World');
         }))
         .pipe(assert.end(done));
     });
 
-    it('should be able to refer by locale and resource id', function(done) {
-      array([
-        create('foo.md', {template: true, title: 'FOO'}, ''),
-        create('bar/baz.md', {title: 'BAZ'}, ''),
-        create('foo.ja.md', {title: 'FOO J'}, ''),
-        create('bar/baz.ja.md', {title: 'BAZ J'}, ''),
-      ])
-        .pipe(minisite({
-          locales: ['en', 'ja'],
-          defaultLocale: 'en',
-          templateEngine: function(_, tmplData) {
-            expect(tmplData.references.en['foo'].title).to.equal('FOO');
-            expect(tmplData.references.en['bar/baz'].title).to.equal('BAZ');
-            expect(tmplData.references.ja['foo'].title).to.equal('FOO J');
-            expect(tmplData.references.ja['bar/baz'].title).to.equal('BAZ J');
-            return tmplData.page.title;
-          },
-        }))
-        .pipe(assert.length(4))
-        .pipe(assert.first(function(file) {
-          expect(file.contents.toString()).to.equal('FOO');
-        }))
-        .pipe(assert.end(done));
-    });
+  });
 
-    it('should be able to collect page data by collection id', function(done) {
-      array([
-        create('items/#1.foo.yaml', {title: 'FOO', template: true}),
-        create('items/#2.bar.yaml', {title: 'BAR'}),
-        create('items/#3.baz.yaml', {title: 'BAZ'}),
-      ])
-        .pipe(minisite({templateEngine: function(_, tmplData) {
-          expect(tmplData.collections['items']).to.have.length(3);
-          expect(tmplData.collections['items'][0].title).to.equal('FOO');
-          expect(tmplData.collections['items'][1].title).to.equal('BAR');
-          expect(tmplData.collections['items'][2].title).to.equal('BAZ');
-          return tmplData.page.title;
-        }}))
-        .pipe(assert.length(3))
-        .pipe(assert.first(function(file) {
-          expect(file.contents.toString()).to.equal('FOO');
-        }))
-        .pipe(assert.end(done));
-    });
+  // collection
+  // ----------
 
-    it('should be able to collect page data by locale and collection id', function(done) {
-      array([
-        create('items/#1.foo.yaml', {title: 'FOO', template: true}),
-        create('items/#2.bar.yaml', {title: 'BAR'}),
-        create('items/#3.baz.yaml', {title: 'BAZ'}),
-        create('items/#1.foo.ja.yaml', {title: 'FOO J'}),
-        create('items/#2.bar.ja.yaml', {title: 'BAR J'}),
-        create('items/#3.baz.ja.yaml', {title: 'BAZ J'}),
-      ])
-        .pipe(minisite({
-          locales: ['en', 'ja'],
-          defaultLocale: 'en',
-          templateEngine: function(_, tmplData) {
-            expect(tmplData.collections.en['items']).to.have.length(3);
-            expect(tmplData.collections.en['items'][0].title).to.equal('FOO');
-            expect(tmplData.collections.en['items'][1].title).to.equal('BAR');
-            expect(tmplData.collections.en['items'][2].title).to.equal('BAZ');
-            expect(tmplData.collections.ja['items']).to.have.length(3);
-            expect(tmplData.collections.ja['items'][0].title).to.equal('FOO J');
-            expect(tmplData.collections.ja['items'][1].title).to.equal('BAR J');
-            expect(tmplData.collections.ja['items'][2].title).to.equal('BAZ J');
-            return tmplData.page.title;
-          },
-        }))
-        .pipe(assert.length(6))
-        .pipe(assert.first(function(file) {
-          expect(file.contents.toString()).to.equal('FOO');
-        }))
-        .pipe(assert.end(done));
-    });
+  describe('template variable: page.collection', function() {
 
-    it('should make index to have its collection', function(done) {
+    it('should have collection related to index page', function(done) {
       array([
         create('items/index.yaml', {}),
         create('items/#1.foo.yaml', {title: 'FOO'}),
@@ -404,7 +394,7 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
-    it('should make index to have its collection (multiple locale)', function(done) {
+    it('should have collection related to index page (with locales)', function(done) {
       array([
         create('items/index.yaml', {}),
         create('items/#1.foo.yaml', {title: 'FOO'}),
@@ -437,7 +427,14 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
-    it('should have all pages in template data', function(done) {
+  });
+
+  // template variable: pages
+  // ========================
+
+  describe('template variable: pages', function() {
+
+    it('should contain all pages', function(done) {
       array([
         create('foo.yaml', {title: 'FOO', template: true}),
         create('bar.yaml', {title: 'BAR'}),
@@ -456,7 +453,7 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
-    it('should have all pages in template data (multiple locale)', function(done) {
+    it('should contain all pages (with locales)', function(done) {
       array([
         create('foo.yaml', {title: 'FOO', template: true}),
         create('bar.yaml', {title: 'BAR'}),
@@ -485,16 +482,132 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
-    it('should have shallow attribute access', function(done) {
-      array([create('hello.yaml', {title: 'Hello', myData: 'World'})])
-        .pipe(minisite())
-        .pipe(assert.length(1))
+  });
+
+  // template variable: references
+  // =============================
+
+  describe('template variable: references', function() {
+
+    it('should refer to page by resource id', function(done) {
+      array([
+        create('foo.md', {template: true, title: 'FOO'}, ''),
+        create('bar/baz.md', {title: 'BAZ'}, ''),
+      ])
+        .pipe(minisite({templateEngine: function(_, tmplData) {
+          expect(tmplData.references['foo'].title).to.equal('FOO');
+          expect(tmplData.references['bar/baz'].title).to.equal('BAZ');
+          return tmplData.page.title;
+        }}))
+        .pipe(assert.length(2))
         .pipe(assert.first(function(file) {
-          expect(file.data.title).to.equal('Hello');
-          expect(file.data.myData).to.equal('World');
+          expect(file.contents.toString()).to.equal('FOO');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should refer to page by resource id (with locales)', function(done) {
+      array([
+        create('foo.md', {template: true, title: 'FOO'}, ''),
+        create('bar/baz.md', {title: 'BAZ'}, ''),
+        create('foo.ja.md', {title: 'FOO J'}, ''),
+        create('bar/baz.ja.md', {title: 'BAZ J'}, ''),
+      ])
+        .pipe(minisite({
+          locales: ['en', 'ja'],
+          defaultLocale: 'en',
+          templateEngine: function(_, tmplData) {
+            expect(tmplData.references.en['foo'].title).to.equal('FOO');
+            expect(tmplData.references.en['bar/baz'].title).to.equal('BAZ');
+            expect(tmplData.references.ja['foo'].title).to.equal('FOO J');
+            expect(tmplData.references.ja['bar/baz'].title).to.equal('BAZ J');
+            return tmplData.page.title;
+          },
+        }))
+        .pipe(assert.length(4))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('FOO');
         }))
         .pipe(assert.end(done));
     });
 
   });
+
+  // template variable: collections
+  // ==============================
+
+  describe('template variable: collections', function() {
+
+    it('should refer to collection of pages by collection id', function(done) {
+      array([
+        create('items/foo.yaml', {title: 'FOO', template: true}),
+        create('items/bar.yaml', {title: 'BAR'}),
+        create('items/baz.yaml', {title: 'BAZ'}),
+        create('products/category/foo.yaml', {title: 'FOO'}),
+        create('products/category/bar.yaml', {title: 'BAR'}),
+      ])
+        .pipe(minisite({templateEngine: function(_, tmplData) {
+          expect(tmplData.collections['items']).to.be.an('array');
+          expect(tmplData.collections['items']).to.have.length(3);
+          expect(tmplData.collections['products/category']).to.be.an('array');
+          expect(tmplData.collections['products/category']).to.have.length(2);
+          return tmplData.page.title;
+        }}))
+        .pipe(assert.length(5))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('FOO');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should refer to collection of pages by collection id (with locales)', function(done) {
+      array([
+        create('items/foo.yaml', {title: 'FOO', template: true}),
+        create('items/bar.yaml', {title: 'BAR'}),
+        create('items/baz.yaml', {title: 'BAZ'}),
+        create('items/foo.ja.yaml', {title: 'FOO J'}),
+        create('items/bar.ja.yaml', {title: 'BAR J'}),
+        create('items/baz.ja.yaml', {title: 'BAZ J'}),
+      ])
+        .pipe(minisite({
+          locales: ['en', 'ja'],
+          defaultLocale: 'en',
+          templateEngine: function(_, tmplData) {
+            expect(tmplData.collections.en['items']).to.be.an('array');
+            expect(tmplData.collections.en['items']).to.have.length(3);
+            expect(tmplData.collections.ja['items']).to.be.an('array');
+            expect(tmplData.collections.ja['items']).to.have.length(3);
+            return tmplData.page.title;
+          },
+        }))
+        .pipe(assert.length(6))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('FOO');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should sort documents in collection by order part of filename', function(done) {
+      array([
+        create('items/#2.bar.yaml', {title: 'BAR', template: true}),
+        create('items/#3.baz.yaml', {title: 'BAZ'}),
+        create('items/#1.foo.yaml', {title: 'FOO'}),
+      ])
+        .pipe(minisite({templateEngine: function(_, tmplData) {
+          expect(tmplData.collections['items']).to.be.an('array');
+          expect(tmplData.collections['items']).to.have.length(3);
+          expect(tmplData.collections['items'][0].title).to.equal('FOO');
+          expect(tmplData.collections['items'][1].title).to.equal('BAR');
+          expect(tmplData.collections['items'][2].title).to.equal('BAZ');
+          return tmplData.page.title;
+        }}))
+        .pipe(assert.length(3))
+        .pipe(assert.first(function(file) {
+          expect(file.data.title).to.equal('BAR');
+        }))
+        .pipe(assert.end(done));
+    });
+
+  });
+
 });

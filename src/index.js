@@ -49,8 +49,8 @@ module.exports = function(options) {
     // common data
     // -----------
 
-    vinyls
-      .forEach(function(vinyl) {
+    vinyls = vinyls
+      .map(function(vinyl) {
         var data = vinyl.data = parse(vinyl.relative, {locales: options.locales});
 
         // locale
@@ -82,7 +82,10 @@ module.exports = function(options) {
 
         // filepath
         vinyl.path = path.join(vinyl.base, data.filepath);
-      });
+
+        return vinyl;
+      })
+      .filter(function(vinyl) { return !vinyl.data.draft || options.draft });
 
     // check error
     // -----------
@@ -103,8 +106,9 @@ module.exports = function(options) {
     // document data
     // -------------
 
-    vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
+    var docs = vinyls.filter(function(vinyl) { return vinyl.data.document });
+
+    docs
       .map(function(vinyl) {
         var data = vinyl.data;
 
@@ -134,15 +138,11 @@ module.exports = function(options) {
           data.data  = fmData.attributes;
           data.body  = fmData.body;
         }
-        data.template    = data.data.template;
-        data.title       = data.data.title;
-        data.description = data.data.description;
 
         return data;
       })
       .forEach(function(data, i, dataList) {
         dataList
-          .filter(function(d) { return !d.draft || options.draft })
           .filter(function(d) { return d.resourceId === data.resourceId })
           .forEach(function(d) { data.locales[d.locale] = d });
       });
@@ -150,9 +150,7 @@ module.exports = function(options) {
     // pages
     // -----
 
-    var pages = vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
+    var pages = docs
       .reduce(function(pages, vinyl) {
         var locale = vinyl.data.locale;
         if (locale) {
@@ -162,15 +160,13 @@ module.exports = function(options) {
           pages.push(vinyl.data);
         }
         return pages;
-      }, options.locales && options.locales.length ? {} : []);
+      }, []);
 
     // document collections
     // --------------------
 
     var sortees = [];
-    var collections = vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
+    var collections = docs
       .filter(function(vinyl) { return !vinyl.data.index })
       .reduce(function(collections, vinyl) {
         var locale = vinyl.data.locale;
@@ -214,9 +210,7 @@ module.exports = function(options) {
 
     // indexes to have collections
 
-    vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
+    docs
       .filter(function(vinyl) { return vinyl.data.index })
       .forEach(function(vinyl) {
         var locale = vinyl.data.locale;
@@ -235,9 +229,7 @@ module.exports = function(options) {
     // references
     // ----------
 
-    var references = vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
+    var references = docs
       .reduce(function(references, vinyl) {
         var locale = vinyl.data.locale;
         var id     = vinyl.data.resourceId;
@@ -253,9 +245,7 @@ module.exports = function(options) {
     // shallow attribute access
     // ------------------------
 
-    vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
+    docs
       .forEach(function(vinyl) {
         for (var key in vinyl.data.data) {
           if (key in vinyl.data) {
@@ -268,8 +258,7 @@ module.exports = function(options) {
     // document rendering
     // ------------------
 
-    vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
+    docs
       .forEach(function(vinyl) {
         if (vinyl.data.template) {
           var tmplName = vinyl.data.template;
@@ -290,7 +279,6 @@ module.exports = function(options) {
     // ----
 
     vinyls
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
       .forEach(this.push.bind(this));
 
     // done
