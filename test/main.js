@@ -380,6 +380,20 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should have markdown filter by default', function(done) {
+      array([create('hello.md', {
+        template: 'hello.html',
+      }, 'Hello **World**')])
+        .pipe(minisite({
+          templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-markdown'}),
+        }))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString().trim().replace(/[\n\t]+/g, '')).to.equal('<p>Hello <strong>World</strong></p>');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 
   // template variable: page
