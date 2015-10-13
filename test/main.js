@@ -316,12 +316,12 @@ describe('gulp-minisite', function() {
 
     it('should render content by default', function(done) {
       array([create('hello.yaml', {
-        template: 'root.html',
+        template: 'hello.html',
         title: 'Hello',
         description: 'World',
       })])
         .pipe(minisite({
-          templateEngine: require('../src/engines/nunjucks')({path: 'test/template'}),
+          templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-basic'}),
         }))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
