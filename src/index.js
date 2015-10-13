@@ -2,24 +2,20 @@ var PluginError = require('gulp-util').PluginError;
 var assign      = require('lodash.assign');
 var fm          = require('front-matter');
 var path        = require('path');
-var swig        = require('swig');
 var through     = require('through2');
 var yaml        = require('js-yaml');
 
 var parse = require('./parse');
 
-swig.setDefaults({cache: false});
-
 module.exports = function(options) {
 
   options = assign({
-    defaultLocale: 'en',
-    locales:       ['en'],
-    site:          null,
-    swig:          swig,
-    template:      'template',
-    draft:         false,
-    dataDocument:  [],
+    defaultLocale:  null,
+    locales:        null,
+    site:           null,
+    templateEngine: require('./engines/nunjucks')(),
+    draft:          false,
+    dataExtensions: ['yml', 'yaml', 'json'],
   }, options);
 
   // ===
@@ -53,15 +49,15 @@ module.exports = function(options) {
     // common data
     // -----------
 
-    vinyls
-      .forEach(function(vinyl) {
+    vinyls = vinyls
+      .map(function(vinyl) {
         var data = vinyl.data = parse(vinyl.relative, {locales: options.locales});
 
         // locale
         data.locale || (data.locale = options.defaultLocale);
 
         // document
-        if (~options.dataDocument.indexOf(data.extname)) {
+        if (options.dataExtensions && ~options.dataExtensions.indexOf(data.extname)) {
           data.document = 'data';
         } else if (fm.test(vinyl.contents.toString())) {
           data.document = 'text';
@@ -86,7 +82,10 @@ module.exports = function(options) {
 
         // filepath
         vinyl.path = path.join(vinyl.base, data.filepath);
-      });
+
+        return vinyl;
+      })
+      .filter(function(vinyl) { return !vinyl.data.draft || options.draft });
 
     // check error
     // -----------
@@ -107,8 +106,9 @@ module.exports = function(options) {
     // document data
     // -------------
 
-    vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
+    var docs = vinyls.filter(function(vinyl) { return vinyl.data.document });
+
+    docs
       .map(function(vinyl) {
         var data = vinyl.data;
 
@@ -138,26 +138,35 @@ module.exports = function(options) {
           data.data  = fmData.attributes;
           data.body  = fmData.body;
         }
-        data.template    = data.data.template;
-        data.title       = data.data.title;
-        data.description = data.data.description;
 
         return data;
       })
       .forEach(function(data, i, dataList) {
         dataList
-          .filter(function(d) { return !d.draft || options.draft })
           .filter(function(d) { return d.resourceId === data.resourceId })
           .forEach(function(d) { data.locales[d.locale] = d });
       });
+
+    // pages
+    // -----
+
+    var pages = docs
+      .reduce(function(pages, vinyl) {
+        var locale = vinyl.data.locale;
+        if (locale) {
+          pages[locale] || (pages[locale] = []);
+          pages[locale].push(vinyl.data);
+        } else {
+          pages.push(vinyl.data);
+        }
+        return pages;
+      }, []);
 
     // document collections
     // --------------------
 
     var sortees = [];
-    var collections = vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
+    var collections = docs
       .filter(function(vinyl) { return !vinyl.data.index })
       .reduce(function(collections, vinyl) {
         var locale = vinyl.data.locale;
@@ -199,22 +208,68 @@ module.exports = function(options) {
       });
     });
 
+    // indexes to have collections
+
+    docs
+      .filter(function(vinyl) { return vinyl.data.index })
+      .forEach(function(vinyl) {
+        var locale = vinyl.data.locale;
+        var id     = vinyl.data.collectionId;
+        if (locale) {
+          if (collections[locale] && collections[locale][id]) {
+            vinyl.data.collection = collections[locale][id];
+          } else {
+            vinyl.data.collection = [];
+          }
+        } else {
+          vinyl.data.collection = collections[id] || [];
+        }
+      });
+
+    // references
+    // ----------
+
+    var references = docs
+      .reduce(function(references, vinyl) {
+        var locale = vinyl.data.locale;
+        var id     = vinyl.data.resourceId;
+        if (locale) {
+          references[locale] || (references[locale] = {});
+          references[locale][id] = vinyl.data;
+        } else {
+          references[id] = vinyl.data;
+        }
+        return references;
+      }, {});
+
+    // shallow attribute access
+    // ------------------------
+
+    docs
+      .forEach(function(vinyl) {
+        for (var key in vinyl.data.data) {
+          if (key in vinyl.data) {
+            continue;
+          }
+          vinyl.data[key] = vinyl.data.data[key];
+        }
+      });
+
     // document rendering
     // ------------------
 
-    vinyls
-      .filter(function(vinyl) { return vinyl.data.document })
+    docs
       .forEach(function(vinyl) {
-        var data = vinyl.data;
-
-        if (data.template) {
-          var tmplPath = path.join(options.template, data.template);
-          var rendered = options.swig.renderFile(tmplPath, {
+        if (vinyl.data.template) {
+          var tmplName = vinyl.data.template;
+          var tmplData = {
             site:        options.site,
             page:        vinyl.data,
+            pages:       pages,
             collections: collections,
-          });
-          vinyl.contents = new Buffer(rendered, 'utf8');
+            references:  references,
+          };
+          vinyl.contents = new Buffer(options.templateEngine(tmplName, tmplData), 'utf8');
         } else {
           vinyl.contents = new Buffer(vinyl.data.body, 'utf8');
         }
@@ -224,7 +279,6 @@ module.exports = function(options) {
     // ----
 
     vinyls
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft })
       .forEach(this.push.bind(this));
 
     // done
