@@ -316,12 +316,12 @@ describe('gulp-minisite', function() {
 
     it('should render content by default', function(done) {
       array([create('hello.yaml', {
-        template: 'root.html',
+        template: 'hello.html',
         title: 'Hello',
         description: 'World',
       })])
         .pipe(minisite({
-          templateEngine: require('../src/engines/nunjucks')({path: 'test/template'}),
+          templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-basic'}),
         }))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -346,6 +346,36 @@ describe('gulp-minisite', function() {
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
           expect(file.contents.toString().trim()).to.equal('Hello - World');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should inherit template', function(done) {
+      array([create('hello.yaml', {
+        template: 'pages/hello.html',
+        title: 'Hello',
+      })])
+        .pipe(minisite({
+          templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-inheritance'}),
+        }))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString().trim()).to.equal('Root - Hello');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should include template', function(done) {
+      array([create('hello.yaml', {
+        template: 'pages/hello.html',
+        title: 'Hello',
+      })])
+        .pipe(minisite({
+          templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-include'}),
+        }))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString().trim()).to.equal('Hello - Partial');
         }))
         .pipe(assert.end(done));
     });
