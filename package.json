@@ -32,5 +32,16 @@
   "bugs": {
     "url": "https://github.com/hanamura/gulp-minisite/issues"
   },
-  "homepage": "https://github.com/hanamura/gulp-minisite#readme"
+  "homepage": "https://github.com/hanamura/gulp-minisite#readme",
+  "keywords": [
+    "blog",
+    "cms",
+    "generator",
+    "gulpplugin",
+    "site",
+    "static site generator",
+    "static",
+    "website",
+    "yaml"
+  ]
 }
