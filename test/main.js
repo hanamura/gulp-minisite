@@ -350,6 +350,36 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should inherit template', function(done) {
+      array([create('hello.yaml', {
+        template: 'pages/hello.html',
+        title: 'Hello',
+      })])
+        .pipe(minisite({
+          templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-inheritance'}),
+        }))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString().trim()).to.equal('Root - Hello');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should include template', function(done) {
+      array([create('hello.yaml', {
+        template: 'pages/hello.html',
+        title: 'Hello',
+      })])
+        .pipe(minisite({
+          templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-include'}),
+        }))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString().trim()).to.equal('Hello - Partial');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 
   // template variable: page
