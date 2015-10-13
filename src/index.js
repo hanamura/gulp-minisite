@@ -172,7 +172,7 @@ module.exports = function(options) {
         var locale = vinyl.data.locale;
         var id     = vinyl.data.collectionId;
         if (locale) {
-          collections[locale]     || (collections[locale]     = {});
+          collections[locale]     || (collections[locale] = {});
           collections[locale][id] || sortees.push(collections[locale][id] = []);
           collections[locale][id].push(vinyl.data);
         } else {
