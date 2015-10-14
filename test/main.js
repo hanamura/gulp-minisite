@@ -396,6 +396,29 @@ describe('gulp-minisite', function() {
 
   });
 
+  // template variable: site
+  // =======================
+
+  describe('template variable: site', function() {
+
+    it('should be the object passed to minisite()', function(done) {
+      array([create('hello.yml', {title: 'Hello', template: true})])
+        .pipe(minisite({
+          site: {name: 'Site'},
+          templateEngine: function(_, tmplData) {
+            expect(tmplData.site.name).to.equal('Site');
+            return tmplData.page.title;
+          },
+        }))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('Hello');
+        }))
+        .pipe(assert.end(done));
+    });
+
+  });
+
   // template variable: page
   // =======================
 
