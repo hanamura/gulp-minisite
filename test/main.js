@@ -417,6 +417,85 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should be assigned to locale specific objects if it has the exact same locales with options.locales', function(done) {
+      array([
+        create('hello.yml', {title: 'Hello', template: true}),
+        create('hello.en.yml', {title: 'Hello En', template: true}),
+        create('hello.ja.yml', {title: 'Hello Ja', template: true}),
+      ])
+        .pipe(minisite({
+          locales: ['en', 'ja'],
+          site: {
+            '': {name: 'No locale'},
+            en: {name: 'En'},
+            ja: {name: 'Ja'},
+          },
+          templateEngine: function(_, tmplData) {
+            expect(tmplData.site).to.not.have.property('');
+            expect(tmplData.site).to.not.have.property('en');
+            expect(tmplData.site).to.not.have.property('ja');
+            ({
+              '': function() {
+                expect(tmplData.site.name).to.equal('No locale');
+              },
+              en: function() {
+                expect(tmplData.site.name).to.equal('En');
+              },
+              ja: function() {
+                expect(tmplData.site.name).to.equal('Ja');
+              },
+            })[tmplData.page.locale || '']();
+            return tmplData.page.title;
+          },
+        }))
+        .pipe(assert.length(3))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('Hello');
+        }))
+        .pipe(assert.second(function(file) {
+          expect(file.contents.toString()).to.equal('Hello En');
+        }))
+        .pipe(assert.nth(2, function(file) {
+          expect(file.contents.toString()).to.equal('Hello Ja');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should be the object passed to minisite() if it doesn’t have the exact same locales with options.locales', function(done) {
+      array([
+        create('hello.yml', {title: 'Hello', template: true}),
+        create('hello.en.yml', {title: 'Hello En', template: true}),
+        create('hello.ja.yml', {title: 'Hello Ja', template: true}),
+      ])
+        .pipe(minisite({
+          locales: ['en', 'ja'],
+          site: {
+            name: 'Site',
+            '': {name: 'No locale'},
+            en: {name: 'En'},
+            ja: {name: 'Ja'},
+          },
+          templateEngine: function(_, tmplData) {
+            expect(tmplData.site.name).to.equal('Site');
+            expect(tmplData.site[''].name).to.equal('No locale');
+            expect(tmplData.site.en.name).to.equal('En');
+            expect(tmplData.site.ja.name).to.equal('Ja');
+            return tmplData.page.title;
+          },
+        }))
+        .pipe(assert.length(3))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('Hello');
+        }))
+        .pipe(assert.second(function(file) {
+          expect(file.contents.toString()).to.equal('Hello En');
+        }))
+        .pipe(assert.nth(2, function(file) {
+          expect(file.contents.toString()).to.equal('Hello Ja');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 
   // template variable: page
