@@ -679,8 +679,9 @@ describe('gulp-minisite', function() {
           locales: ['en', 'ja'],
           defaultLocale: 'en',
           templateEngine: function(_, tmplData) {
-            expect(tmplData.pages.en).to.have.length(5);
-            expect(tmplData.pages.ja).to.have.length(5);
+            expect(tmplData.pages).to.have.length(5);
+            expect(tmplData.global.pages.en).to.have.length(5);
+            expect(tmplData.global.pages.ja).to.have.length(5);
             return tmplData.page.title;
           },
         }))
@@ -726,10 +727,11 @@ describe('gulp-minisite', function() {
           locales: ['en', 'ja'],
           defaultLocale: 'en',
           templateEngine: function(_, tmplData) {
-            expect(tmplData.references.en['foo'].title).to.equal('FOO');
-            expect(tmplData.references.en['bar/baz'].title).to.equal('BAZ');
-            expect(tmplData.references.ja['foo'].title).to.equal('FOO J');
-            expect(tmplData.references.ja['bar/baz'].title).to.equal('BAZ J');
+            expect(tmplData.references['foo'].title).to.equal('FOO');
+            expect(tmplData.global.references.en['foo'].title).to.equal('FOO');
+            expect(tmplData.global.references.en['bar/baz'].title).to.equal('BAZ');
+            expect(tmplData.global.references.ja['foo'].title).to.equal('FOO J');
+            expect(tmplData.global.references.ja['bar/baz'].title).to.equal('BAZ J');
             return tmplData.page.title;
           },
         }))
@@ -782,10 +784,11 @@ describe('gulp-minisite', function() {
           locales: ['en', 'ja'],
           defaultLocale: 'en',
           templateEngine: function(_, tmplData) {
-            expect(tmplData.collections.en['items']).to.be.an('array');
-            expect(tmplData.collections.en['items']).to.have.length(3);
-            expect(tmplData.collections.ja['items']).to.be.an('array');
-            expect(tmplData.collections.ja['items']).to.have.length(3);
+            expect(tmplData.collections['items']).to.be.an('array');
+            expect(tmplData.global.collections.en['items']).to.be.an('array');
+            expect(tmplData.global.collections.en['items']).to.have.length(3);
+            expect(tmplData.global.collections.ja['items']).to.be.an('array');
+            expect(tmplData.global.collections.ja['items']).to.have.length(3);
             return tmplData.page.title;
           },
         }))
