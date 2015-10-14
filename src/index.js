@@ -1,6 +1,7 @@
 var PluginError = require('gulp-util').PluginError;
 var assign      = require('lodash.assign');
 var fm          = require('front-matter');
+var isEqual     = require('lodash.isequal');
 var path        = require('path');
 var through     = require('through2');
 var yaml        = require('js-yaml');
@@ -147,6 +148,28 @@ module.exports = function(options) {
           .forEach(function(d) { data.locales[d.locale] = d });
       });
 
+    // site
+    // ----
+
+    var site;
+    if (
+      options.locales &&
+      options.locales.length &&
+      isEqual(
+        Object.keys(options.site || {})
+          .filter(function(x) { return x }).sort(),
+        (options.locales || []).slice().sort()
+      )
+    ) {
+      site = options.site;
+    } else {
+      site = (options.locales || [])
+        .reduce(function(site, locale) {
+          site[locale] = options.site;
+          return site;
+        }, {'': options.site});
+    }
+
     // pages
     // -----
 
@@ -261,9 +284,10 @@ module.exports = function(options) {
     docs
       .forEach(function(vinyl) {
         if (vinyl.data.template) {
+          var locale   = vinyl.data.locale || '';
           var tmplName = vinyl.data.template;
           var tmplData = {
-            site:        options.site,
+            site:        site[locale],
             page:        vinyl.data,
             pages:       pages,
             collections: collections,
