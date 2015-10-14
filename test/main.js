@@ -496,6 +496,42 @@ describe('gulp-minisite', function() {
 
   });
 
+  // locales
+  // -------
+
+  describe('template variable: page.locales', function() {
+
+    it('should have references to the other locale pages representing the same resource', function(done) {
+      array([
+        create('hello.en.yml', {title: 'Hello En'}),
+        create('hello.ja.yml', {title: 'Hello Ja'}),
+        create('hello.de.yml', {title: 'Hello De'}),
+      ])
+        .pipe(minisite({locales: ['en', 'ja', 'de']}))
+        .pipe(assert.length(3))
+        .pipe(assert.first(function(file) {
+          expect(file.data.title).to.equal('Hello En');
+          expect(file.data.locales.en.title).to.equal('Hello En');
+          expect(file.data.locales.ja.title).to.equal('Hello Ja');
+          expect(file.data.locales.de.title).to.equal('Hello De');
+        }))
+        .pipe(assert.second(function(file) {
+          expect(file.data.title).to.equal('Hello Ja');
+          expect(file.data.locales.en.title).to.equal('Hello En');
+          expect(file.data.locales.ja.title).to.equal('Hello Ja');
+          expect(file.data.locales.de.title).to.equal('Hello De');
+        }))
+        .pipe(assert.nth(2, function(file) {
+          expect(file.data.title).to.equal('Hello De');
+          expect(file.data.locales.en.title).to.equal('Hello En');
+          expect(file.data.locales.ja.title).to.equal('Hello Ja');
+          expect(file.data.locales.de.title).to.equal('Hello De');
+        }))
+        .pipe(assert.end(done));
+    });
+
+  });
+
   // template variable: pages
   // ========================
 
