@@ -291,8 +291,7 @@ module.exports = function(options) {
     // pipe
     // ----
 
-    vinyls
-      .forEach(this.push.bind(this));
+    vinyls.forEach(this.push, this);
 
     // done
     // ----
