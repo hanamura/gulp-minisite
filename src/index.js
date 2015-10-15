@@ -292,6 +292,9 @@ module.exports = function(options) {
             pages:       pages,
             collections: collections,
             references:  references,
+            global:      {
+              site: site,
+            },
           };
           vinyl.contents = new Buffer(options.templateEngine(tmplName, tmplData), 'utf8');
         } else {
