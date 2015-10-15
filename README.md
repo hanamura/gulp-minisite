@@ -4,7 +4,7 @@ Static site generator for Gulp ecosystem.
 
 ## Why?
 
-1. A single build system is enough for static site development. I already have Gulp. I don’t want to work hard for making full-featured-standalone-static-site-generator to work well with Gulp/Npm/Node. Or to compile, minify, and optimize many different kinds of files properly in their way, while Gulp does everything well.  
+1. A single build system is enough for static site development. I already have [Gulp](http://gulpjs.com). I don’t want to work hard for making full-featured-standalone-static-site-generator to work well with Gulp/Npm/Node. Or to compile, minify, and optimize many different kinds of files properly in their way, while Gulp does everything well.  
   Making user-friendly presentation (HTML and pertty permalinks) from developer-friendly expression (eg. JSON, YAML, or Markdown and pretty filenames) is the one thing to do well for gulp-minisite.
 2. To start small and expand flexibly, gulp-minisite keeps it simple, works without complex configutations, and provides some handy options and features.
 
