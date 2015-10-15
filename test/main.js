@@ -496,6 +496,33 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should be reached to global site variable via global.site', function(done) {
+      array([
+        create('hello.yml', {title: 'Hello', template: true}),
+        create('hello.en.yml', {}),
+        create('hello.ja.yml', {}),
+      ])
+        .pipe(minisite({
+          locales: ['en', 'ja'],
+          site: {
+            '': {name: 'No locale'},
+            en: {name: 'En'},
+            ja: {name: 'Ja'},
+          },
+          templateEngine: function(_, tmplData) {
+            expect(tmplData.global.site[''].name).to.equal('No locale');
+            expect(tmplData.global.site.en.name).to.equal('En');
+            expect(tmplData.global.site.ja.name).to.equal('Ja');
+            return tmplData.page.title;
+          },
+        }))
+        .pipe(assert.length(3))
+        .pipe(assert.first(function(file) {
+          expect(file.contents.toString()).to.equal('Hello');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 
   // template variable: page
