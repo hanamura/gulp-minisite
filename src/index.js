@@ -175,15 +175,11 @@ module.exports = function(options) {
 
     var pages = docs
       .reduce(function(pages, vinyl) {
-        var locale = vinyl.data.locale;
-        if (locale) {
-          pages[locale] || (pages[locale] = []);
-          pages[locale].push(vinyl.data);
-        } else {
-          pages.push(vinyl.data);
-        }
+        var locale = vinyl.data.locale || '';
+        pages[locale] || (pages[locale] = []);
+        pages[locale].push(vinyl.data);
         return pages;
-      }, []);
+      }, {});
 
     // document collections
     // --------------------
@@ -192,16 +188,11 @@ module.exports = function(options) {
     var collections = docs
       .filter(function(vinyl) { return !vinyl.data.index })
       .reduce(function(collections, vinyl) {
-        var locale = vinyl.data.locale;
+        var locale = vinyl.data.locale || '';
         var id     = vinyl.data.collectionId;
-        if (locale) {
-          collections[locale]     || (collections[locale] = {});
-          collections[locale][id] || sortees.push(collections[locale][id] = []);
-          collections[locale][id].push(vinyl.data);
-        } else {
-          collections[id] || sortees.push(collections[id] = []);
-          collections[id].push(vinyl.data);
-        }
+        collections[locale]     || (collections[locale] = {});
+        collections[locale][id] || sortees.push(collections[locale][id] = []);
+        collections[locale][id].push(vinyl.data);
         return collections;
       }, {});
 
@@ -236,16 +227,12 @@ module.exports = function(options) {
     docs
       .filter(function(vinyl) { return vinyl.data.index })
       .forEach(function(vinyl) {
-        var locale = vinyl.data.locale;
+        var locale = vinyl.data.locale || '';
         var id     = vinyl.data.collectionId;
-        if (locale) {
-          if (collections[locale] && collections[locale][id]) {
-            vinyl.data.collection = collections[locale][id];
-          } else {
-            vinyl.data.collection = [];
-          }
+        if (collections[locale] && collections[locale][id]) {
+          vinyl.data.collection = collections[locale][id];
         } else {
-          vinyl.data.collection = collections[id] || [];
+          vinyl.data.collection = [];
         }
       });
 
@@ -254,14 +241,10 @@ module.exports = function(options) {
 
     var references = docs
       .reduce(function(references, vinyl) {
-        var locale = vinyl.data.locale;
+        var locale = vinyl.data.locale || '';
         var id     = vinyl.data.resourceId;
-        if (locale) {
-          references[locale] || (references[locale] = {});
-          references[locale][id] = vinyl.data;
-        } else {
-          references[id] = vinyl.data;
-        }
+        references[locale] || (references[locale] = {});
+        references[locale][id] = vinyl.data;
         return references;
       }, {});
 
@@ -289,11 +272,14 @@ module.exports = function(options) {
           var tmplData = {
             site:        site[locale],
             page:        vinyl.data,
-            pages:       pages,
-            collections: collections,
-            references:  references,
+            pages:       pages[locale],
+            collections: collections[locale],
+            references:  references[locale],
             global:      {
-              site: site,
+              site:        site,
+              pages:       pages,
+              collections: collections,
+              references:  references,
             },
           };
           vinyl.contents = new Buffer(options.templateEngine(tmplName, tmplData), 'utf8');
