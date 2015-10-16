@@ -222,13 +222,14 @@ module.exports = function(options) {
       });
     });
 
-    // indexes to have collections
+    // pages’ collections
 
     docs
-      .filter(function(vinyl) { return vinyl.data.index })
       .forEach(function(vinyl) {
         var locale = vinyl.data.locale || '';
-        var id     = vinyl.data.collectionId;
+        var id     = vinyl.data.index
+                   ? vinyl.data.collectionId
+                   : vinyl.data.resourceId;
         if (collections[locale] && collections[locale][id]) {
           vinyl.data.collection = collections[locale][id];
         } else {
