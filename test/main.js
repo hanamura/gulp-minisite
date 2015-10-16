@@ -613,6 +613,25 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should have collection related to page even if it is not an index', function(done) {
+      array([
+        create('items/foo.yml', {title: 'FOO'}),
+        create('items/foo/001.yml', {title: 'FOO 001'}),
+        create('items/foo/002.yml', {title: 'FOO 002'}),
+        create('items/foo/003.yml', {title: 'FOO 003'}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(4))
+        .pipe(assert.first(function(file) {
+          expect(file.data.collection).to.be.an('array');
+          expect(file.data.collection).to.have.length(3);
+          expect(file.data.collection[0].title).to.equal('FOO 001');
+          expect(file.data.collection[1].title).to.equal('FOO 002');
+          expect(file.data.collection[2].title).to.equal('FOO 003');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 
   // locales
