@@ -394,6 +394,19 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should make markdown filter not to throw error even if empty string, null, or undefined is passed', function(done) {
+      array([create('hello.yml', {
+        template: 'hello.html',
+        emptyString: '',
+        nullValue: null,
+      })])
+        .pipe(minisite({
+          templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-markdown-null'}),
+        }))
+        .pipe(assert.length(1))
+        .pipe(assert.end(done));
+    });
+
   });
 
   // template variable: site
