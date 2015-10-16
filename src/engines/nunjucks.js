@@ -12,6 +12,9 @@ module.exports = function(options) {
     {noCache: true}
   );
   env.addFilter('markdown', function(str) {
+    if (!str) {
+      return str;
+    }
     return new nunjucks.runtime.SafeString(marked(str));
   });
 
