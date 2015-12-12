@@ -8,7 +8,8 @@ var path        = require('path');
 var through     = require('through2');
 var yaml        = require('js-yaml');
 
-var parse = require('./parse');
+var compareOrder = require('./compare-order');
+var parse        = require('./parse');
 
 module.exports = function(options) {
 
@@ -21,23 +22,171 @@ module.exports = function(options) {
     dataExtensions: ['yml', 'yaml', 'json'],
   }, options);
 
+  // template data
+  // =============
+
+  var pages       = {};
+  var collections = {};
+  var references  = {};
+  [''].concat(options.locales || []).forEach(function(locale) {
+    pages[locale]       = [];
+    collections[locale] = {};
+    references[locale]  = {};
+  });
+
+  var site;
+  if (
+    options.locales &&
+    options.locales.length &&
+    isEqual(
+      Object.keys(options.site || {})
+        .filter(function(x) { return x }).sort(),
+      options.locales.slice().sort()
+    )
+  ) {
+    site = options.site;
+  } else {
+    site = (options.locales || [])
+      .reduce(function(site, locale) {
+        site[locale] = options.site;
+        return site;
+      }, {'': options.site});
+  }
+
+  // init file
+  // =========
+
+  var initFile = function(file) {
+    var data = file.data = parse(file.relative, {locales: options.locales});
+
+    // data.locale
+    data.locale || (data.locale = options.defaultLocale);
+
+    // data.document
+    if (~(options.dataExtensions || []).indexOf(data.extname)) {
+      data.document = 'data';
+    } else if (fm.test(file.contents.toString())) {
+      data.document = 'text';
+    } else {
+      data.document = false;
+    }
+
+    // data.filepaths
+    data.filepaths = [];
+    data.filepaths.push(data.locale === options.defaultLocale ? null : data.locale);
+    data.filepaths.push.apply(data.filepaths, data.dirnames);
+    if (data.document) {
+      data.filepaths.push(data.index ? null : data.slug);
+      data.filepaths.push('index.html');
+    } else {
+      data.filepaths.push(data.slug + '.' + data.extname);
+    }
+    data.filepaths = data.filepaths.filter(function(x) { return x });
+
+    // data.filepath
+    data.filepath = path.join.apply(path, data.filepaths);
+
+    // file.path
+    file.path = path.join(file.base, data.filepath);
+
+    return file;
+  };
+
+  // check duplicates
+  // ================
+
+  var checkDuplicates = (function() {
+    var paths = {};
+    return function(file) {
+      if (file.path in paths) {
+        throw new PluginError('gulp-minisite', [
+          'creating two files into the same path: ' + file.path,
+          'file 1: ' + paths[file.path].relative,
+          'file 2: ' + file.relative,
+        ].join('\n'));
+      }
+      paths[file.path] = file;
+    };
+  })();
+
+  // init doc
+  // ========
+
+  var initDoc = (function() {
+    var resourceGroup = {};
+
+    return function(file) {
+      var data   = file.data;
+      var locale = data.locale || '';
+
+      // data.resourceId
+      data.resourceId = data.dirnames.concat(data.index ? [] : [data.slug]).join('/');
+      // references
+      references[locale][data.resourceId] = data;
+      // data.locales
+      resourceGroup[data.resourceId] || (resourceGroup[data.resourceId] = {});
+      resourceGroup[data.resourceId][locale] = data;
+      data.locales = resourceGroup[data.resourceId];
+
+      // data.collectionId
+      data.collectionId = data.dirnames.join('/');
+      // collections
+      if (!data.index) {
+        collections[locale][data.collectionId] || (collections[locale][data.collectionId] = []);
+        collections[locale][data.collectionId].push(data);
+        collections[locale][data.collectionId].sort(compareOrder);
+      }
+      // data.collection
+      collections[locale][data.resourceId] || (collections[locale][data.resourceId] = []);
+      data.collection = collections[locale][data.resourceId];
+
+      // data.paths
+      data.paths = data.filepaths.slice(0, -1);
+      data.paths.unshift('/');
+
+      // data.path
+      data.path = path.join.apply(path, data.paths);
+
+      // pages
+      pages[locale].push(data);
+
+      // data & body
+      if (data.document === 'data') {
+        data.data = yaml.safeLoad(file.contents.toString());
+        (data.data === undefined) && (data.data = {});
+        data.body = '';
+      } else if (data.document === 'text') {
+        var fmData = fm(file.contents.toString());
+        data.data  = fmData.attributes;
+        data.body  = fmData.body;
+      }
+      // shallow attribute access
+      for (var key in data.data) {
+        if (key in data) {
+          continue;
+        }
+        data[key] = data.data[key];
+      }
+    };
+  })();
+
   // ===
   // ===
 
-  var vinyls = [];
+  var files = [];
 
   // transform
   // =========
 
-  var transform = function(vinyl, _, done) {
-    if (vinyl.isNull()) {
-      return done(null, vinyl);
+  var transform = function(file, _, done) {
+    if (file.isNull()) {
+      return done(null, file);
     }
-    if (vinyl.isStream()) {
+    if (file.isStream()) {
       return done(new PluginError('gulp-minisite', 'Streaming not supported'));
     }
 
-    vinyls.push(vinyl);
+    files.push(file);
     return done();
   };
 
@@ -45,236 +194,43 @@ module.exports = function(options) {
   // =====
 
   var flush = function(done) {
-    if (!vinyls.length) {
+    if (!files.length) {
       return done();
     }
 
     // common data
     // -----------
 
-    vinyls = vinyls
-      .map(function(vinyl) {
-        var data = vinyl.data = parse(vinyl.relative, {locales: options.locales});
-
-        // locale
-        data.locale || (data.locale = options.defaultLocale);
-
-        // document
-        if (options.dataExtensions && ~options.dataExtensions.indexOf(data.extname)) {
-          data.document = 'data';
-        } else if (fm.test(vinyl.contents.toString())) {
-          data.document = 'text';
-        } else {
-          data.document = false;
-        }
-
-        // filepaths
-        data.filepaths = [];
-        data.filepaths.push(data.locale === options.defaultLocale ? null : data.locale);
-        data.filepaths.push.apply(data.filepaths, data.dirnames);
-        if (data.document) {
-          data.filepaths.push(data.index ? null : data.slug);
-          data.filepaths.push('index.html');
-        } else {
-          data.filepaths.push(data.slug + '.' + data.extname);
-        }
-        data.filepaths = data.filepaths.filter(function(x) { return x });
-
-        // filepath
-        data.filepath = path.join.apply(path, data.filepaths);
-
-        // filepath
-        vinyl.path = path.join(vinyl.base, data.filepath);
-
-        return vinyl;
-      })
-      .filter(function(vinyl) { return !vinyl.data.draft || options.draft });
+    files = files
+      .map(initFile)
+      .filter(function(v) { return !v.data.draft || options.draft });
 
     // check error
     // -----------
 
-    vinyls
-      .reduce(function(paths, vinyl) {
-        if (vinyl.path in paths) {
-          done(new PluginError('gulp-minisite', [
-            'creating two files into the same path: ' + vinyl.path,
-            'file 1: ' + paths[vinyl.path].data.source,
-            'file 2: ' + vinyl.data.source,
-          ].join('\n')));
-        }
-        paths[vinyl.path] = vinyl;
-        return paths;
-      }, {});
+    try {
+      files.forEach(checkDuplicates);
+    } catch (e) {
+      return done(e);
+    }
 
     // document data
     // -------------
 
-    var docs = vinyls.filter(function(vinyl) { return vinyl.data.document });
-
-    docs
-      .map(function(vinyl) {
-        var data = vinyl.data;
-
-        // resourceId
-        data.resourceId = data.dirnames.concat(data.index ? [] : [data.slug]).join('/');
-
-        // collectionId
-        data.collectionId = data.dirnames.join('/');
-
-        // paths
-        data.paths = data.filepaths.slice(0, -1);
-        data.paths.unshift('/');
-
-        // path
-        data.path = path.join.apply(path, data.paths);
-
-        // locales
-        data.locales = {};
-
-        // data & body
-        if (data.document === 'data') {
-          data.data = yaml.safeLoad(vinyl.contents.toString());
-          (data.data === undefined) && (data.data = {});
-          data.body = '';
-        } else if (data.document === 'text') {
-          var fmData = fm(vinyl.contents.toString());
-          data.data  = fmData.attributes;
-          data.body  = fmData.body;
-        }
-
-        return data;
-      })
-      .forEach(function(data, i, dataList) {
-        dataList
-          .filter(function(d) { return d.resourceId === data.resourceId })
-          .forEach(function(d) { data.locales[d.locale] = d });
-      });
-
-    // site
-    // ----
-
-    var site;
-    if (
-      options.locales &&
-      options.locales.length &&
-      isEqual(
-        Object.keys(options.site || {})
-          .filter(function(x) { return x }).sort(),
-        (options.locales || []).slice().sort()
-      )
-    ) {
-      site = options.site;
-    } else {
-      site = (options.locales || [])
-        .reduce(function(site, locale) {
-          site[locale] = options.site;
-          return site;
-        }, {'': options.site});
-    }
-
-    // pages
-    // -----
-
-    var pages = docs
-      .reduce(function(pages, vinyl) {
-        var locale = vinyl.data.locale || '';
-        pages[locale] || (pages[locale] = []);
-        pages[locale].push(vinyl.data);
-        return pages;
-      }, {});
-
-    // document collections
-    // --------------------
-
-    var sortees = [];
-    var collections = docs
-      .filter(function(vinyl) { return !vinyl.data.index })
-      .reduce(function(collections, vinyl) {
-        var locale = vinyl.data.locale || '';
-        var id     = vinyl.data.collectionId;
-        collections[locale]     || (collections[locale] = {});
-        collections[locale][id] || sortees.push(collections[locale][id] = []);
-        collections[locale][id].push(vinyl.data);
-        return collections;
-      }, {});
-
-    // sort collections
-
-    sortees.forEach(function(collection) {
-      collection.sort(function(a, b) {
-        var aOrder = a.order;
-        var bOrder = b.order;
-
-        if (aOrder !== undefined && bOrder !== undefined) {
-          if (aOrder < bOrder) { return -1 }
-          if (aOrder > bOrder) { return 1 }
-        } else if (aOrder !== undefined) {
-          return 1;
-        } else if (bOrder !== undefined) {
-          return -1;
-        }
-
-        var aSlug = a.slug;
-        var bSlug = b.slug;
-
-        if (aSlug < bSlug) { return -1 }
-        if (aSlug > bSlug) { return 1 }
-
-        return 0;
-      });
-    });
-
-    // pages’ collections
-
-    docs
-      .forEach(function(vinyl) {
-        var locale = vinyl.data.locale || '';
-        var id     = vinyl.data.index
-                   ? vinyl.data.collectionId
-                   : vinyl.data.resourceId;
-        if (collections[locale] && collections[locale][id]) {
-          vinyl.data.collection = collections[locale][id];
-        } else {
-          vinyl.data.collection = [];
-        }
-      });
-
-    // references
-    // ----------
-
-    var references = docs
-      .reduce(function(references, vinyl) {
-        var locale = vinyl.data.locale || '';
-        var id     = vinyl.data.resourceId;
-        references[locale] || (references[locale] = {});
-        references[locale][id] = vinyl.data;
-        return references;
-      }, {});
-
-    // shallow attribute access
-    // ------------------------
-
-    docs
-      .forEach(function(vinyl) {
-        for (var key in vinyl.data.data) {
-          if (key in vinyl.data) {
-            continue;
-          }
-          vinyl.data[key] = vinyl.data.data[key];
-        }
-      });
+    var docs = files.filter(function(v) { return v.data.document });
+    docs.forEach(initDoc);
 
     // document rendering
     // ------------------
 
     docs
-      .forEach(function(vinyl) {
-        if (vinyl.data.template) {
-          var locale   = vinyl.data.locale || '';
-          var tmplName = vinyl.data.template;
+      .forEach(function(file) {
+        if (file.data.template) {
+          var locale   = file.data.locale || '';
+          var tmplName = file.data.template;
           var tmplData = {
             site:        site[locale],
-            page:        vinyl.data,
+            page:        file.data,
             pages:       pages[locale],
             collections: collections[locale],
             references:  references[locale],
@@ -285,16 +241,16 @@ module.exports = function(options) {
               references:  references,
             },
           };
-          vinyl.contents = new Buffer(options.templateEngine(tmplName, tmplData), 'utf8');
+          file.contents = new Buffer(options.templateEngine(tmplName, tmplData), 'utf8');
         } else {
-          vinyl.contents = new Buffer(vinyl.data.body, 'utf8');
+          file.contents = new Buffer(file.data.body, 'utf8');
         }
       });
 
     // pipe
     // ----
 
-    vinyls.forEach(this.push, this);
+    files.forEach(this.push, this);
 
     // done
     // ----
