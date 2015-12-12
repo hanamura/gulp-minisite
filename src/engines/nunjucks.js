@@ -1,3 +1,5 @@
+'use strict';
+
 var marked   = require('marked');
 var nunjucks = require('nunjucks');
 var path     = require('path');
