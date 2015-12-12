@@ -16,6 +16,8 @@
   },
   "devDependencies": {
     "chai": "3.4.1",
+    "lodash.chunk": "3.0.1",
+    "lodash.groupby": "3.1.1",
     "mocha": "2.3.4",
     "stream-array": "1.1.1",
     "stream-assert": "2.0.3"
