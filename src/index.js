@@ -1,3 +1,5 @@
+'use strict';
+
 var PluginError = require('gulp-util').PluginError;
 var assign      = require('lodash.assign');
 var fm          = require('front-matter');
