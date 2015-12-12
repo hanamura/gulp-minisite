@@ -3,6 +3,7 @@
 var PluginError = require('gulp-util').PluginError;
 var assign      = require('lodash.assign');
 var fm          = require('front-matter');
+var isArray     = require('lodash.isarray');
 var isEqual     = require('lodash.isequal');
 var path        = require('path');
 var through     = require('through2');
@@ -20,6 +21,7 @@ module.exports = function(options) {
     templateEngine: require('./engines/nunjucks')(),
     draft:          false,
     dataExtensions: ['yml', 'yaml', 'json'],
+    inject:         null,
   }, options);
 
   // template data
@@ -198,32 +200,47 @@ module.exports = function(options) {
       return done();
     }
 
-    // common data
-    // -----------
+    var storedFiles = [];
+    var storedDocs  = [];
+    var tmpFiles = files.slice();
+    var tmpDocs;
 
-    files = files
-      .map(initFile)
-      .filter(function(v) { return !v.data.draft || options.draft });
+    var injects = options.inject ? (isArray(options.inject) ? options.inject : [options.inject]) : [];
+    var injectedFiles;
 
-    // check error
-    // -----------
+    while (injects.length || tmpFiles.length) {
+      tmpFiles = tmpFiles
+        .map(initFile)
+        .filter(function(v) { return !v.data.draft || options.draft });
 
-    try {
-      files.forEach(checkDuplicates);
-    } catch (e) {
-      return done(e);
+      try {
+        tmpFiles.forEach(checkDuplicates);
+      } catch (e) {
+        return done(e);
+      }
+
+      tmpDocs = tmpFiles.filter(function(v) { return v.data.document });
+      tmpDocs.forEach(initDoc);
+
+      storedFiles = storedFiles.concat(tmpFiles);
+      tmpFiles    = [];
+      storedDocs  = storedDocs.concat(tmpDocs);
+      tmpDocs     = [];
+
+      if (injects.length) {
+        tmpFiles = (injects.shift())({
+          site:        site,
+          pages:       pages,
+          collections: collections,
+          references:  references,
+        }, options);
+      }
     }
-
-    // document data
-    // -------------
-
-    var docs = files.filter(function(v) { return v.data.document });
-    docs.forEach(initDoc);
 
     // document rendering
     // ------------------
 
-    docs
+    storedDocs
       .forEach(function(file) {
         if (file.data.template) {
           var locale   = file.data.locale || '';
@@ -250,7 +267,7 @@ module.exports = function(options) {
     // pipe
     // ----
 
-    files.forEach(this.push, this);
+    storedFiles.forEach(this.push, this);
 
     // done
     // ----
