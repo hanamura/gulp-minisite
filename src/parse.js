@@ -10,33 +10,33 @@ module.exports = function(source, options) {
   var dirnames = path.dirname(source).split('/').filter(function(x) { return x !== '.' });
   var matches  = basename.match(/^_?(?:#([^.]*)\.)?(.+?)(?:\.([^.]+))?$/);
 
-  // source
-  // ======
+  // data.source
+  // ===========
 
   data.source = source;
 
-  // extname
-  // =======
+  // data.extname
+  // ============
 
   data.extname = path.extname(source).slice(1);
 
-  // dirnames
-  // ========
+  // data.dirnames
+  // =============
 
   data.dirnames = dirnames.map(function(x) { return x.replace(/^_/g, '') });
 
-  // draft
-  // =====
+  // data.draft
+  // ==========
 
   data.draft = dirnames.concat([basename]).some(function(x) { return x.indexOf('_') === 0 });
 
-  // order
-  // =====
+  // data.order
+  // ==========
 
   data.order = matches[1];
 
-  // slug, locale
-  // ============
+  // data.slug, data.locale
+  // ======================
 
   if (options.locales && ~options.locales.indexOf(matches[3])) {
     data.slug   = matches[2];
@@ -50,8 +50,8 @@ module.exports = function(source, options) {
     data.locale = null;
   }
 
-  // index
-  // =====
+  // data.index
+  // ==========
 
   data.index = data.slug === 'index';
 

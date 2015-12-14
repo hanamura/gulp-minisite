@@ -1,8 +1,10 @@
-var File   = require('gulp-util').File;
-var array  = require('stream-array');
-var assert = require('stream-assert');
-var expect = require('chai').expect;
-var yaml   = require('js-yaml');
+var File    = require('gulp-util').File;
+var array   = require('stream-array');
+var assert  = require('stream-assert');
+var chunk   = require('lodash.chunk');
+var expect  = require('chai').expect;
+var groupBy = require('lodash.groupby');
+var yaml    = require('js-yaml');
 
 var minisite = require('../src');
 
@@ -848,6 +850,228 @@ describe('gulp-minisite', function() {
         .pipe(assert.length(3))
         .pipe(assert.first(function(file) {
           expect(file.data.title).to.equal('BAR');
+        }))
+        .pipe(assert.end(done));
+    });
+
+  });
+
+  // file injection
+  // ==============
+
+  describe('file injection', function() {
+
+    it('should inject files (pagination example)', function(done) {
+      array([
+          create('items/01.yml'),
+          create('items/02.yml'),
+          create('items/03.yml'),
+          create('items/04.yml'),
+          create('items/05.yml'),
+          create('items/06.yml'),
+          create('items/07.yml'),
+          create('items/08.yml'),
+          create('items/09.yml'),
+          create('items/10.yml'),
+      ])
+        .pipe(minisite({
+          inject: function(data, options) {
+            return chunk(data.collections['']['items'], 3).map(function(_, i) {
+              return create(
+                i === 0 ? 'items/index.yml' : 'items/page/' + (i + 1) + '.yml',
+                {offset: i * 3}
+              );
+            });
+          },
+        }))
+        .pipe(assert.length(14))
+        .pipe(assert.nth(10, function(file) {
+          expect(file.data.offset).to.equal(0);
+          expect(file.path).to.equal('/root/base/items/index.html');
+        }))
+        .pipe(assert.nth(11, function(file) {
+          expect(file.data.offset).to.equal(3);
+          expect(file.path).to.equal('/root/base/items/page/2/index.html');
+        }))
+        .pipe(assert.nth(12, function(file) {
+          expect(file.data.offset).to.equal(6);
+          expect(file.path).to.equal('/root/base/items/page/3/index.html');
+        }))
+        .pipe(assert.nth(13, function(file) {
+          expect(file.data.offset).to.equal(9);
+          expect(file.path).to.equal('/root/base/items/page/4/index.html');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should inject files (category example)', function(done) {
+      array([
+          create('items/01.yml', {category: 'a'}),
+          create('items/02.yml', {category: 'b'}),
+          create('items/03.yml', {category: 'c'}),
+          create('items/04.yml', {category: 'b'}),
+          create('items/05.yml', {category: 'b'}),
+          create('items/06.yml', {category: 'c'}),
+          create('items/07.yml', {category: 'a'}),
+          create('items/08.yml', {category: 'd'}),
+          create('items/09.yml', {category: 'c'}),
+          create('items/10.yml', {category: 'c'}),
+      ])
+        .pipe(minisite({
+          inject: function(data, options) {
+            var group = groupBy(data.collections['']['items'], function(item) {
+              return item.category;
+            });
+            var categories = [];
+            for (var category in group) {
+              categories.push(create('items/category/' + category + '.yml', {
+                category: category,
+                count: group[category].length,
+              }));
+            }
+            return categories;
+          },
+        }))
+        .pipe(assert.length(14))
+        .pipe(assert.nth(10, function(file) {
+          expect(file.data.category).to.equal('a');
+          expect(file.data.count).to.equal(2);
+          expect(file.path).to.equal('/root/base/items/category/a/index.html');
+        }))
+        .pipe(assert.nth(11, function(file) {
+          expect(file.data.category).to.equal('b');
+          expect(file.data.count).to.equal(3);
+          expect(file.path).to.equal('/root/base/items/category/b/index.html');
+        }))
+        .pipe(assert.nth(12, function(file) {
+          expect(file.data.category).to.equal('c');
+          expect(file.data.count).to.equal(4);
+          expect(file.path).to.equal('/root/base/items/category/c/index.html');
+        }))
+        .pipe(assert.nth(13, function(file) {
+          expect(file.data.category).to.equal('d');
+          expect(file.data.count).to.equal(1);
+          expect(file.path).to.equal('/root/base/items/category/d/index.html');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should inject files (date example)', function(done) {
+      array([
+          create('items/01.yml', {date: '2014-10-10'}),
+          create('items/02.yml', {date: '2015-07-15'}),
+          create('items/03.yml', {date: '2015-07-20'}),
+          create('items/04.yml', {date: '2015-07-25'}),
+          create('items/05.yml', {date: '2015-07-30'}),
+          create('items/06.yml', {date: '2015-09-10'}),
+          create('items/07.yml', {date: '2015-09-20'}),
+          create('items/08.yml', {date: '2015-09-30'}),
+          create('items/09.yml', {date: '2015-10-10'}),
+          create('items/10.yml', {date: '2015-10-25'}),
+      ])
+        .pipe(minisite({
+          inject: function(data, options) {
+            var group = groupBy(data.collections['']['items'], function(item) {
+              return item.date.substr(0, 7);
+            });
+            var months = [];
+            for (var month in group) {
+              months.push(create('items/date/' + month + '.yml', {
+                year: parseInt(month.substr(0, 4)),
+                month: parseInt(month.substr(5)),
+                count: group[month].length,
+              }));
+            }
+            return months;
+          },
+        }))
+        .pipe(assert.length(14))
+        .pipe(assert.nth(10, function(file) {
+          expect(file.data.year).to.equal(2014);
+          expect(file.data.month).to.equal(10);
+          expect(file.data.count).to.equal(1);
+          expect(file.path).to.equal('/root/base/items/date/2014-10/index.html');
+        }))
+        .pipe(assert.nth(11, function(file) {
+          expect(file.data.year).to.equal(2015);
+          expect(file.data.month).to.equal(7);
+          expect(file.data.count).to.equal(4);
+          expect(file.path).to.equal('/root/base/items/date/2015-07/index.html');
+        }))
+        .pipe(assert.nth(12, function(file) {
+          expect(file.data.year).to.equal(2015);
+          expect(file.data.month).to.equal(9);
+          expect(file.data.count).to.equal(3);
+          expect(file.path).to.equal('/root/base/items/date/2015-09/index.html');
+        }))
+        .pipe(assert.nth(13, function(file) {
+          expect(file.data.year).to.equal(2015);
+          expect(file.data.month).to.equal(10);
+          expect(file.data.count).to.equal(2);
+          expect(file.path).to.equal('/root/base/items/date/2015-10/index.html');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should inject files multiple times', function(done) {
+      array([
+          create('index.yml'),
+          create('items/01.yml', {keyword: 'a'}),
+          create('items/02.yml', {keyword: 'b'}),
+          create('items/03.yml', {keyword: 'c'}),
+          create('items/04.yml', {keyword: 'd'}),
+          create('items/05.yml', {keyword: 'd'}),
+          create('items/06.yml', {keyword: 'd'}),
+          create('items/07.yml', {keyword: 'b'}),
+          create('items/08.yml', {keyword: 'c'}),
+          create('items/09.yml', {keyword: 'a'}),
+          create('items/10.yml', {keyword: 'c'}),
+          create('pages/01.yml', {keyword: 'a'}),
+          create('pages/02.yml', {keyword: 'c'}),
+          create('pages/03.yml', {keyword: 'd'}),
+          create('pages/04.yml', {keyword: 'c'}),
+          create('pages/05.yml', {keyword: 'b'}),
+      ])
+        .pipe(minisite({
+          inject: [
+            function(data, options) {
+              var items = data.pages[''].filter(function(item) {
+                return 'keyword' in item;
+              });
+              var group = groupBy(items, function(item) {
+                return item.keyword;
+              });
+              var keywords = [];
+              for (var keyword in group) {
+                keywords.push(create('keyword/' + keyword + '.yml', {
+                  keyword: keyword,
+                  count: group[keyword].length,
+                }));
+              }
+              return keywords;
+            },
+            function(data, options) {
+              return chunk(data.collections['']['keyword'], 3).map(function(_, i) {
+                return create(
+                  i === 0 ? 'keyword/index.yml' : 'keyword/page/' + (i + 1) + '.yml',
+                  {offset: i * 3}
+                );
+              });
+            },
+          ],
+        }))
+        .pipe(assert.length(22))
+        .pipe(assert.nth(16, function(file) {
+          expect(file.data.keyword).to.equal('a');
+          expect(file.path).to.equal('/root/base/keyword/a/index.html');
+        }))
+        .pipe(assert.nth(20, function(file) {
+          expect(file.data.offset).to.equal(0);
+          expect(file.path).to.equal('/root/base/keyword/index.html');
+        }))
+        .pipe(assert.nth(21, function(file) {
+          expect(file.data.offset).to.equal(3);
+          expect(file.path).to.equal('/root/base/keyword/page/2/index.html');
         }))
         .pipe(assert.end(done));
     });
