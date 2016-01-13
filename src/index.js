@@ -3,7 +3,6 @@
 var PluginError = require('gulp-util').PluginError;
 var assign      = require('lodash.assign');
 var fm          = require('front-matter');
-var isArray     = require('lodash.isarray');
 var isEqual     = require('lodash.isequal');
 var path        = require('path');
 var through     = require('through2');
@@ -205,7 +204,7 @@ module.exports = function(options) {
     var tmpFiles = files.slice();
     var tmpDocs;
 
-    var injects = options.inject ? (isArray(options.inject) ? options.inject : [options.inject]) : [];
+    var injects = options.inject ? (Array.isArray(options.inject) ? options.inject : [options.inject]) : [];
     var injectedFiles;
 
     while (injects.length || tmpFiles.length) {
