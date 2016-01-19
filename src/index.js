@@ -239,29 +239,32 @@ module.exports = function(options) {
     // document rendering
     // ------------------
 
-    storedDocs
-      .forEach(function(file) {
-        if (file.data.template) {
-          var locale   = file.data.locale || '';
-          var tmplName = file.data.template;
-          var tmplData = {
-            site:        site[locale],
-            page:        file.data,
-            pages:       pages[locale],
-            collections: collections[locale],
-            references:  references[locale],
-            global:      {
-              site:        site,
-              pages:       pages,
-              collections: collections,
-              references:  references,
-            },
-          };
+    for (var file of storedDocs) {
+      if (file.data.template) {
+        var locale   = file.data.locale || '';
+        var tmplName = file.data.template;
+        var tmplData = {
+          site:        site[locale],
+          page:        file.data,
+          pages:       pages[locale],
+          collections: collections[locale],
+          references:  references[locale],
+          global:      {
+            site:        site,
+            pages:       pages,
+            collections: collections,
+            references:  references,
+          },
+        };
+        try {
           file.contents = new Buffer(options.templateEngine(tmplName, tmplData), 'utf8');
-        } else {
-          file.contents = new Buffer(file.data.body, 'utf8');
+        } catch (e) {
+          return done(new PluginError('gulp-minisite', e.message));
         }
-      });
+      } else {
+        file.contents = new Buffer(file.data.body, 'utf8');
+      }
+    }
 
     // pipe
     // ----
