@@ -672,6 +672,57 @@ describe('gulp-minisite', function() {
 
   });
 
+  // prev/next
+  // ---------
+
+  describe('template variable: page.prev, page.next', function() {
+
+    it('should link to next document in the same collection', function(done) {
+      array([
+        create('items/001.yml', {title: '1'}),
+        create('items/002.yml', {title: '2'}),
+        create('items/003.yml', {title: '3'}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(3))
+        .pipe(assert.first(function(file) {
+          expect(file.data.next).to.exist;
+          expect(file.data.next.title).to.equal('2');
+        }))
+        .pipe(assert.second(function(file) {
+          expect(file.data.next).to.exist;
+          expect(file.data.next.title).to.equal('3');
+        }))
+        .pipe(assert.nth(2, function(file) {
+          expect(file.data.next).to.be.null;
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should link to prev document in the same collection', function(done) {
+      array([
+        create('items/001.yml', {title: '1'}),
+        create('items/002.yml', {title: '2'}),
+        create('items/003.yml', {title: '3'}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(3))
+        .pipe(assert.first(function(file) {
+          expect(file.data.prev).to.be.null;
+        }))
+        .pipe(assert.second(function(file) {
+          expect(file.data.prev).to.exist;
+          expect(file.data.prev.title).to.equal('1');
+        }))
+        .pipe(assert.nth(2, function(file) {
+          expect(file.data.prev).to.exist;
+          expect(file.data.prev.title).to.equal('2');
+        }))
+        .pipe(assert.end(done));
+    });
+
+  });
+
   // template variable: pages
   // ========================
 
