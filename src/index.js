@@ -135,7 +135,13 @@ module.exports = function(options) {
       if (!data.index) {
         collections[locale][data.collectionId] || (collections[locale][data.collectionId] = []);
         collections[locale][data.collectionId].push(data);
-        collections[locale][data.collectionId].sort(compareOrder);
+        collections[locale][data.collectionId].sort(compareOrder)
+          .reduce(function(prev, curr) {
+            curr.prev = prev;
+            curr.next = null;
+            if (!prev) return curr;
+            return prev.next = curr;
+          }, null);
       }
       // data.collection
       collections[locale][data.resourceId] || (collections[locale][data.resourceId] = []);
