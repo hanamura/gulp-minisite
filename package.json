@@ -8,17 +8,17 @@
     "front-matter": "^2.0.5",
     "gulp-util": "^3.0.7",
     "js-yaml": "^3.5.2",
-    "lodash.assign": "^3.2.0",
-    "lodash.isequal": "^3.0.4",
+    "lodash.assign": "^4.2.0",
+    "lodash.isequal": "^4.4.0",
     "marked": "^0.3.5",
     "nunjucks": "^2.3.0",
     "through2": "^2.0.0"
   },
   "devDependencies": {
     "chai": "^3.4.1",
-    "lodash.chunk": "^3.0.1",
-    "lodash.groupby": "^3.1.1",
-    "mocha": "^2.3.4",
+    "lodash.chunk": "^4.2.0",
+    "lodash.groupby": "^4.6.0",
+    "mocha": "^3.2.0",
     "stream-array": "^1.1.1",
     "stream-assert": "^2.0.3"
   },
