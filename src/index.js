@@ -159,7 +159,11 @@ module.exports = function(options) {
 
       // data & body
       if (data.document === 'data') {
-        data.data = yaml.safeLoad(file.contents.toString());
+        try {
+          data.data = yaml.safeLoad(file.contents.toString());
+        } catch (e) {
+          throw new PluginError('gulp-minisite', e.message);
+        }
         (data.data === undefined) && (data.data = {});
         data.body = '';
       } else if (data.document === 'text') {
@@ -225,7 +229,11 @@ module.exports = function(options) {
       }
 
       tmpDocs = tmpFiles.filter(function(v) { return v.data.document });
-      tmpDocs.forEach(initDoc);
+      try {
+        tmpDocs.forEach(initDoc);
+      } catch (e) {
+        return done(e);
+      }
 
       storedFiles = storedFiles.concat(tmpFiles);
       tmpFiles    = [];

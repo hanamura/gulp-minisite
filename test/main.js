@@ -96,6 +96,17 @@ describe('gulp-minisite', function() {
         });
     });
 
+    it('should throw PluginError on YAML syntax error', function(done) {
+      var PluginError = require('gulp-util').PluginError;
+      array([create('hello.yml', null, 'x:\nx')])
+        .pipe(minisite())
+        .on('error', function(e) {
+          expect(e).to.be.an.instanceof(PluginError);
+          done();
+        })
+        .pipe(assert.end(done));
+    });
+
     it('should treat YAML as document', function(done) {
       array([create('hello.yml', {
         title: 'Hello',
