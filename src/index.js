@@ -265,7 +265,7 @@ module.exports = function(options) {
     // pipe
     // ----
 
-    storedFiles.forEach(this.push, this);
+    storedFiles.forEach(stream.push, stream);
 
     // done
     // ----
@@ -276,5 +276,6 @@ module.exports = function(options) {
   // through
   // =======
 
-  return through.obj(transform, flush);
+  var stream = through.obj(transform, flush);
+  return stream;
 };
