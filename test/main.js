@@ -536,9 +536,9 @@ describe('gulp-minisite', function() {
             ja: {name: 'Ja'},
           },
           templateEngine: function(_, tmplData) {
-            expect(tmplData.global.site[''].name).to.equal('No locale');
-            expect(tmplData.global.site.en.name).to.equal('En');
-            expect(tmplData.global.site.ja.name).to.equal('Ja');
+            expect(tmplData.global[''].site.name).to.equal('No locale');
+            expect(tmplData.global['en'].site.name).to.equal('En');
+            expect(tmplData.global['ja'].site.name).to.equal('Ja');
             return tmplData.page.title;
           },
         }))
@@ -776,8 +776,8 @@ describe('gulp-minisite', function() {
           defaultLocale: 'en',
           templateEngine: function(_, tmplData) {
             expect(tmplData.pages).to.have.length(5);
-            expect(tmplData.global.pages.en).to.have.length(5);
-            expect(tmplData.global.pages.ja).to.have.length(5);
+            expect(tmplData.global['en'].pages).to.have.length(5);
+            expect(tmplData.global['ja'].pages).to.have.length(5);
             return tmplData.page.title;
           },
         }))
@@ -824,10 +824,10 @@ describe('gulp-minisite', function() {
           defaultLocale: 'en',
           templateEngine: function(_, tmplData) {
             expect(tmplData.references['foo'].title).to.equal('FOO');
-            expect(tmplData.global.references.en['foo'].title).to.equal('FOO');
-            expect(tmplData.global.references.en['bar/baz'].title).to.equal('BAZ');
-            expect(tmplData.global.references.ja['foo'].title).to.equal('FOO J');
-            expect(tmplData.global.references.ja['bar/baz'].title).to.equal('BAZ J');
+            expect(tmplData.global['en'].references['foo'].title).to.equal('FOO');
+            expect(tmplData.global['en'].references['bar/baz'].title).to.equal('BAZ');
+            expect(tmplData.global['ja'].references['foo'].title).to.equal('FOO J');
+            expect(tmplData.global['ja'].references['bar/baz'].title).to.equal('BAZ J');
             return tmplData.page.title;
           },
         }))
@@ -881,10 +881,10 @@ describe('gulp-minisite', function() {
           defaultLocale: 'en',
           templateEngine: function(_, tmplData) {
             expect(tmplData.collections['items']).to.be.an('array');
-            expect(tmplData.global.collections.en['items']).to.be.an('array');
-            expect(tmplData.global.collections.en['items']).to.have.length(3);
-            expect(tmplData.global.collections.ja['items']).to.be.an('array');
-            expect(tmplData.global.collections.ja['items']).to.have.length(3);
+            expect(tmplData.global['en'].collections['items']).to.be.an('array');
+            expect(tmplData.global['en'].collections['items']).to.have.length(3);
+            expect(tmplData.global['ja'].collections['items']).to.be.an('array');
+            expect(tmplData.global['ja'].collections['items']).to.have.length(3);
             return tmplData.page.title;
           },
         }))
@@ -937,8 +937,8 @@ describe('gulp-minisite', function() {
           create('items/10.yml'),
       ])
         .pipe(minisite({
-          inject: function(data, options) {
-            return chunk(data.collections['']['items'], 3).map(function(_, i) {
+          inject: function(global, options) {
+            return chunk(global[''].collections['items'], 3).map(function(_, i) {
               return create(
                 i === 0 ? 'items/index.yml' : 'items/page/' + (i + 1) + '.yml',
                 {offset: i * 3}
@@ -980,8 +980,8 @@ describe('gulp-minisite', function() {
           create('items/10.yml', {category: 'c'}),
       ])
         .pipe(minisite({
-          inject: function(data, options) {
-            var group = groupBy(data.collections['']['items'], function(item) {
+          inject: function(global, options) {
+            var group = groupBy(global[''].collections['items'], function(item) {
               return item.category;
             });
             var categories = [];
@@ -1032,8 +1032,8 @@ describe('gulp-minisite', function() {
           create('items/10.yml', {date: '2015-10-25'}),
       ])
         .pipe(minisite({
-          inject: function(data, options) {
-            var group = groupBy(data.collections['']['items'], function(item) {
+          inject: function(global, options) {
+            var group = groupBy(global[''].collections['items'], function(item) {
               return item.date.substr(0, 7);
             });
             var months = [];
@@ -1096,8 +1096,8 @@ describe('gulp-minisite', function() {
       ])
         .pipe(minisite({
           inject: [
-            function(data, options) {
-              var items = data.pages[''].filter(function(item) {
+            function(global, options) {
+              var items = global[''].pages.filter(function(item) {
                 return 'keyword' in item;
               });
               var group = groupBy(items, function(item) {
@@ -1112,8 +1112,8 @@ describe('gulp-minisite', function() {
               }
               return keywords;
             },
-            function(data, options) {
-              return chunk(data.collections['']['keyword'], 3).map(function(_, i) {
+            function(global, options) {
+              return chunk(global[''].collections['keyword'], 3).map(function(_, i) {
                 return create(
                   i === 0 ? 'keyword/index.yml' : 'keyword/page/' + (i + 1) + '.yml',
                   {offset: i * 3}

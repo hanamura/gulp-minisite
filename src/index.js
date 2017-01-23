@@ -26,33 +26,25 @@ module.exports = function(options) {
   // template data
   // =============
 
-  var pages       = {};
-  var collections = {};
-  var references  = {};
-  [''].concat(options.locales || []).forEach(function(locale) {
-    pages[locale]       = [];
-    collections[locale] = {};
-    references[locale]  = {};
-  });
+  var locales = [''].concat(options.locales || []);
 
-  var site;
-  if (
-    options.locales &&
-    options.locales.length &&
+  var multilocaleSite = (
+    locales.length > 1 &&
     isEqual(
-      Object.keys(options.site || {})
-        .filter(function(x) { return x }).sort(),
+      Object.keys(options.site || {}).filter(function(x) { return x }).sort(),
       options.locales.slice().sort()
     )
-  ) {
-    site = options.site;
-  } else {
-    site = (options.locales || [])
-      .reduce(function(site, locale) {
-        site[locale] = options.site;
-        return site;
-      }, {'': options.site});
-  }
+  );
+
+  var global = {};
+  locales.forEach(function(locale) {
+    global[locale] = {
+      pages:       [],
+      collections: {},
+      references:  {},
+      site:        multilocaleSite ? options.site[locale] : options.site,
+    };
+  });
 
   // init file
   // =========
@@ -123,7 +115,7 @@ module.exports = function(options) {
       // data.resourceId
       data.resourceId = data.dirnames.concat(data.index ? [] : [data.slug]).join('/');
       // references
-      references[locale][data.resourceId] = data;
+      global[locale].references[data.resourceId] = data;
       // data.locales
       resourceGroup[data.resourceId] || (resourceGroup[data.resourceId] = {});
       resourceGroup[data.resourceId][locale] = data;
@@ -133,9 +125,9 @@ module.exports = function(options) {
       data.collectionId = data.dirnames.join('/');
       // collections
       if (!data.index) {
-        collections[locale][data.collectionId] || (collections[locale][data.collectionId] = []);
-        collections[locale][data.collectionId].push(data);
-        collections[locale][data.collectionId].sort(compareOrder)
+        global[locale].collections[data.collectionId] || (global[locale].collections[data.collectionId] = []);
+        global[locale].collections[data.collectionId].push(data);
+        global[locale].collections[data.collectionId].sort(compareOrder)
           .reduce(function(prev, curr) {
             curr.prev = prev;
             curr.next = null;
@@ -144,8 +136,8 @@ module.exports = function(options) {
           }, null);
       }
       // data.collection
-      collections[locale][data.resourceId] || (collections[locale][data.resourceId] = []);
-      data.collection = collections[locale][data.resourceId];
+      global[locale].collections[data.resourceId] || (global[locale].collections[data.resourceId] = []);
+      data.collection = global[locale].collections[data.resourceId];
 
       // data.paths
       data.paths = data.filepaths.slice(0, -1);
@@ -155,7 +147,7 @@ module.exports = function(options) {
       data.path = path.join.apply(path, data.paths);
 
       // pages
-      pages[locale].push(data);
+      global[locale].pages.push(data);
 
       // data & body
       if (data.document === 'data') {
@@ -241,12 +233,7 @@ module.exports = function(options) {
       tmpDocs     = [];
 
       if (injects.length) {
-        tmpFiles = (injects.shift())({
-          site:        site,
-          pages:       pages,
-          collections: collections,
-          references:  references,
-        }, options);
+        tmpFiles = (injects.shift())(global, options);
       }
     }
 
@@ -258,17 +245,12 @@ module.exports = function(options) {
         var locale   = file.data.locale || '';
         var tmplName = file.data.template;
         var tmplData = {
-          site:        site[locale],
           page:        file.data,
-          pages:       pages[locale],
-          collections: collections[locale],
-          references:  references[locale],
-          global:      {
-            site:        site,
-            pages:       pages,
-            collections: collections,
-            references:  references,
-          },
+          site:        global[locale].site,
+          pages:       global[locale].pages,
+          collections: global[locale].collections,
+          references:  global[locale].references,
+          global:      global,
         };
         try {
           file.contents = new Buffer(options.templateEngine(tmplName, tmplData), 'utf8');
