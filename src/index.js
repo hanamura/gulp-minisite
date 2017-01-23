@@ -1,11 +1,11 @@
 'use strict';
 
 var PluginError = require('gulp-util').PluginError;
+var Transform   = require('stream').Transform;
 var assign      = require('lodash.assign');
 var fm          = require('front-matter');
 var isEqual     = require('lodash.isequal');
 var path        = require('path');
-var through     = require('through2');
 var yaml        = require('js-yaml');
 
 var compareOrder = require('./compare-order');
@@ -273,9 +273,13 @@ module.exports = function(options) {
     return done();
   };
 
-  // through
-  // =======
+  // stream
+  // ======
 
-  var stream = through.obj(transform, flush);
+  var stream = new Transform({
+    objectMode: true,
+    transform: transform,
+    flush: flush,
+  });
   return stream;
 };
