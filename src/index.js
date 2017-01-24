@@ -2,7 +2,6 @@
 
 var PluginError = require('gulp-util').PluginError;
 var Transform   = require('stream').Transform;
-var assign      = require('lodash.assign');
 var fm          = require('front-matter');
 var isEqual     = require('lodash.isequal');
 var path        = require('path');
@@ -13,7 +12,7 @@ var parse        = require('./parse');
 
 module.exports = function(options) {
 
-  options = assign({
+  options = Object.assign({
     defaultLocale:  null,
     locales:        null,
     site:           null,
