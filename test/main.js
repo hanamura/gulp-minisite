@@ -1138,6 +1138,39 @@ describe('gulp-minisite', function() {
         .pipe(assert.end(done));
     });
 
+    it('should inject files asynchronously', function(done) {
+      array([create('index.yml')])
+        .pipe(minisite({
+          inject: [
+            (global, options) => {
+              return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                  resolve([create('hello.yml')]);
+                }, 500);
+              });
+            },
+            (global, options) => {
+              return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                  resolve([create('world.yml')]);
+                }, 500);
+              });
+            },
+          ],
+        }))
+        .pipe(assert.length(3))
+        .pipe(assert.first(file => {
+          expect(file.path).to.equal('/root/base/index.html');
+        }))
+        .pipe(assert.nth(1, file => {
+          expect(file.path).to.equal('/root/base/hello/index.html');
+        }))
+        .pipe(assert.nth(2, file => {
+          expect(file.path).to.equal('/root/base/world/index.html');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 
 });
