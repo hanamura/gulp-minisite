@@ -202,74 +202,54 @@ module.exports = function(options) {
 
     var storedFiles = [];
     var storedDocs  = [];
-    var tmpFiles = files.slice();
-    var tmpDocs;
 
-    var injects = options.inject ? (Array.isArray(options.inject) ? options.inject : [options.inject]) : [];
-    var injectedFiles;
-
-    while (injects.length || tmpFiles.length) {
-      tmpFiles = tmpFiles
-        .map(initFile)
-        .filter(function(v) { return !v.data.draft || options.draft });
-
-      try {
-        tmpFiles.forEach(checkDuplicates);
-      } catch (e) {
-        return done(e);
-      }
-
-      tmpDocs = tmpFiles.filter(function(v) { return v.data.document });
-      try {
-        tmpDocs.forEach(initDoc);
-      } catch (e) {
-        return done(e);
-      }
-
-      storedFiles = storedFiles.concat(tmpFiles);
-      tmpFiles    = [];
-      storedDocs  = storedDocs.concat(tmpDocs);
-      tmpDocs     = [];
-
-      if (injects.length) {
-        tmpFiles = (injects.shift())(global, options);
-      }
+    const injects = [() => files.slice()];
+    if (options.inject && Array.isArray(options.inject)) {
+      injects.push.apply(injects, options.inject);
+    } else if (options.inject) {
+      injects.push(options.inject);
     }
 
-    // document rendering
-    // ------------------
+    const proceedFiles = files => {
+      files = files.map(initFile).filter(v => !v.data.draft || options.draft);
+      files.forEach(checkDuplicates);
+      const docs = files.filter(v => v.data.document);
+      docs.forEach(initDoc);
+      storedFiles = storedFiles.concat(files);
+      storedDocs  = storedDocs.concat(docs);
+    };
 
-    for (var file of storedDocs) {
-      if (file.data.template) {
-        var locale   = file.data.locale || '';
-        var tmplName = file.data.template;
-        var tmplData = {
-          page:        file.data,
-          site:        global[locale].site,
-          pages:       global[locale].pages,
-          collections: global[locale].collections,
-          references:  global[locale].references,
-          global:      global,
-        };
-        try {
-          file.contents = new Buffer(options.templateEngine(tmplName, tmplData), 'utf8');
-        } catch (e) {
-          return done(new PluginError('gulp-minisite', e.message));
+    injects
+      .reduce((promise, inject) => {
+        return promise.then(() => inject(global, options)).then(proceedFiles);
+      }, Promise.resolve())
+      .then(() => {
+        for (var file of storedDocs) {
+          if (file.data.template) {
+            var locale   = file.data.locale || '';
+            var tmplName = file.data.template;
+            var tmplData = {
+              page:        file.data,
+              site:        global[locale].site,
+              pages:       global[locale].pages,
+              collections: global[locale].collections,
+              references:  global[locale].references,
+              global:      global,
+            };
+            try {
+              file.contents = new Buffer(options.templateEngine(tmplName, tmplData), 'utf8');
+            } catch (e) {
+              return done(new PluginError('gulp-minisite', e.message));
+            }
+          } else {
+            file.contents = new Buffer(file.data.body, 'utf8');
+          }
         }
-      } else {
-        file.contents = new Buffer(file.data.body, 'utf8');
-      }
-    }
+        storedFiles.forEach(stream.push.bind(stream));
+        done();
+      })
+      .catch(done);
 
-    // pipe
-    // ----
-
-    storedFiles.forEach(stream.push, stream);
-
-    // done
-    // ----
-
-    return done();
   };
 
   // stream
