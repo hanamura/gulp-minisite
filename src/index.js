@@ -212,7 +212,6 @@ module.exports = function(options) {
 
     const proceedFiles = files => {
       files = files.map(initFile).filter(v => !v.data.draft || options.draft);
-      files.forEach(checkDuplicates);
       const docs = files.filter(v => v.data.document);
       docs.forEach(initDoc);
       storedFiles = storedFiles.concat(files);
@@ -224,6 +223,7 @@ module.exports = function(options) {
         return promise.then(() => inject(global, options)).then(proceedFiles);
       }, Promise.resolve())
       .then(() => {
+        storedFiles.forEach(checkDuplicates);
         for (var file of storedDocs) {
           if (file.data.template) {
             var locale   = file.data.locale || '';
