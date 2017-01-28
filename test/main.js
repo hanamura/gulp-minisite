@@ -36,7 +36,7 @@ describe('gulp-minisite', function() {
   describe('filename/filepath transformer (basic)', function() {
 
     it('should transform document into HTML', function(done) {
-      array([create('hello.md', {}, '')])
+      array([create('hello.yml', {})])
         .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -46,11 +46,11 @@ describe('gulp-minisite', function() {
     });
 
     it('should not transform file if it is not a document', function(done) {
-      array([create('hello.md', null, 'Hello')])
+      array([create('hello.txt', null, 'Hello')])
         .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
-          expect(file.path).to.equal('/root/base/hello.md');
+          expect(file.path).to.equal('/root/base/hello.txt');
           expect(file.contents.toString().trim()).to.equal('Hello');
         }))
         .pipe(assert.end(done));
@@ -58,7 +58,7 @@ describe('gulp-minisite', function() {
 
     it('should strip front matter', function(done) {
       array([create('hello.md', {title: 'hello'}, 'body')])
-        .pipe(minisite())
+        .pipe(minisite({dataExtensions: ['md']}))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
           expect(file.contents.toString().trim()).to.equal('body');
@@ -68,8 +68,8 @@ describe('gulp-minisite', function() {
 
     it('should proceed multiple files', function(done) {
       array([
-        create('hello.md', {}, ''),
-        create('world.md', {}, ''),
+        create('hello.yml', {}),
+        create('world.yml', {}),
       ])
         .pipe(minisite())
         .pipe(assert.length(2))
@@ -85,7 +85,7 @@ describe('gulp-minisite', function() {
     it('should throw PluginError if two files have the same path', function(done) {
       var PluginError = require('gulp-util').PluginError;
       array([
-        create('hello.md', {}, ''),
+        create('hello.json', {}),
         create('hello.yml', {}),
       ])
         .pipe(minisite())
@@ -163,8 +163,8 @@ describe('gulp-minisite', function() {
 
     it('should give document consistent resource id', function(done) {
       array([
-        create('foo.md', {}, ''),
-        create('bar/baz.md', {}, ''),
+        create('foo.yml', {}),
+        create('bar/baz.yml', {}),
       ])
         .pipe(minisite())
         .pipe(assert.length(2))
@@ -178,7 +178,7 @@ describe('gulp-minisite', function() {
     });
 
     it('should strip order part from filename', function(done) {
-      array([create('#01.hello.md', {}, '')])
+      array([create('#01.hello.yml', {})])
         .pipe(minisite())
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -195,7 +195,7 @@ describe('gulp-minisite', function() {
   describe('filename/filepath transformer (locale)', function() {
 
     it('should prefix locale to path', function(done) {
-      array([create('hello.ja.md', {}, '')])
+      array([create('hello.ja.yml', {})])
         .pipe(minisite({locales: ['ja']}))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -205,17 +205,17 @@ describe('gulp-minisite', function() {
     });
 
     it('should prefix locale to path even if it is not a document', function(done) {
-      array([create('hello.ja.md', null, '')])
+      array([create('hello.ja.txt', null, '')])
         .pipe(minisite({locales: ['ja']}))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
-          expect(file.path).to.equal('/root/base/ja/hello.md');
+          expect(file.path).to.equal('/root/base/ja/hello.txt');
         }))
         .pipe(assert.end(done));
     });
 
     it('should not prefix locale to path if it is default locale', function(done) {
-      array([create('hello.ja.md', {}, '')])
+      array([create('hello.ja.yml', {})])
         .pipe(minisite({locales: ['ja'], defaultLocale: 'ja'}))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -225,7 +225,7 @@ describe('gulp-minisite', function() {
     });
 
     it('should assign default locale to document if it is specified', function(done) {
-      array([create('hello.md', {}, '')])
+      array([create('hello.yml', {})])
         .pipe(minisite({locales: ['ja'], defaultLocale: 'ja'}))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -235,7 +235,7 @@ describe('gulp-minisite', function() {
     });
 
     it('should not assign any locale to document if default locale is not specified', function(done) {
-      array([create('hello.md', {}, '')])
+      array([create('hello.yml', {})])
         .pipe(minisite({locales: ['ja']}))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -246,7 +246,7 @@ describe('gulp-minisite', function() {
     });
 
     it('should ignore unknown locale', function(done) {
-      array([create('hello.ja.md', {}, '')])
+      array([create('hello.ja.yml', {})])
         .pipe(minisite({locales: ['en']}))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -257,10 +257,10 @@ describe('gulp-minisite', function() {
 
     it('should give documents the same resource id if only a locale differs', function(done) {
       array([
-        create('foo.md', {}, ''),
-        create('bar/baz.md', {}, ''),
-        create('foo.ja.md', {}, ''),
-        create('bar/baz.ja.md', {}, ''),
+        create('foo.yml', {}),
+        create('bar/baz.yml', {}),
+        create('foo.ja.yml', {}),
+        create('bar/baz.ja.yml', {}),
       ])
         .pipe(minisite({locales: ['en', 'ja'], defaultLocale: 'en'}))
         .pipe(assert.length(4))
@@ -287,14 +287,14 @@ describe('gulp-minisite', function() {
   describe('filename/filepath transformer (draft)', function() {
 
     it('should not output draft by default', function(done) {
-      array([create('_hello.md', {}, '')])
+      array([create('_hello.yml', {})])
         .pipe(minisite())
         .pipe(assert.length(0))
         .pipe(assert.end(done));
     });
 
     it('should output draft if specified', function(done) {
-      array([create('_hello.md', {}, '')])
+      array([create('_hello.yml', {})])
         .pipe(minisite({draft: true}))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -304,7 +304,7 @@ describe('gulp-minisite', function() {
     });
 
     it('should strip underscore from filename of draft', function(done) {
-      array([create('_hello.md', {}, '')])
+      array([create('_hello.yml', {})])
         .pipe(minisite({draft: true}))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -314,7 +314,7 @@ describe('gulp-minisite', function() {
     })
 
     it('should treat document as draft if any parent directory is marked as draft', function(done) {
-      array([create('path/_to/hello.md', {}, '')])
+      array([create('path/_to/hello.yml', {})])
         .pipe(minisite())
         .pipe(assert.length(0))
         .pipe(assert.end(done));
@@ -399,6 +399,7 @@ describe('gulp-minisite', function() {
       }, 'Hello **World**')])
         .pipe(minisite({
           templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-markdown'}),
+          dataExtensions: ['md'],
         }))
         .pipe(assert.length(1))
         .pipe(assert.first(function(file) {
@@ -797,8 +798,8 @@ describe('gulp-minisite', function() {
 
     it('should refer to page by resource id', function(done) {
       array([
-        create('foo.md', {template: true, title: 'FOO'}, ''),
-        create('bar/baz.md', {title: 'BAZ'}, ''),
+        create('foo.yml', {template: true, title: 'FOO'}),
+        create('bar/baz.yml', {title: 'BAZ'}),
       ])
         .pipe(minisite({templateEngine: function(_, tmplData) {
           expect(tmplData.references['foo'].title).to.equal('FOO');
@@ -814,10 +815,10 @@ describe('gulp-minisite', function() {
 
     it('should refer to page by resource id (with locales)', function(done) {
       array([
-        create('foo.md', {template: true, title: 'FOO'}, ''),
-        create('bar/baz.md', {title: 'BAZ'}, ''),
-        create('foo.ja.md', {title: 'FOO J'}, ''),
-        create('bar/baz.ja.md', {title: 'BAZ J'}, ''),
+        create('foo.yml', {template: true, title: 'FOO'}),
+        create('bar/baz.yml', {title: 'BAZ'}),
+        create('foo.ja.yml', {title: 'FOO J'}),
+        create('bar/baz.ja.yml', {title: 'BAZ J'}),
       ])
         .pipe(minisite({
           locales: ['en', 'ja'],
