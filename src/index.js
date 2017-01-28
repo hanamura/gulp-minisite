@@ -57,8 +57,6 @@ module.exports = function(options) {
     // data.document
     if (~(options.dataExtensions || []).indexOf(data.extname)) {
       data.document = 'data';
-    } else if (fm.test(file.contents.toString())) {
-      data.document = 'text';
     } else {
       data.document = false;
     }
@@ -149,18 +147,21 @@ module.exports = function(options) {
       global[locale].pages.push(data);
 
       // data & body
-      if (data.document === 'data') {
-        try {
-          data.data = yaml.safeLoad(file.contents.toString());
-        } catch (e) {
-          throw new PluginError('gulp-minisite', e.message);
+      if (data.document) {
+        const contents = file.contents.toString();
+        if (fm.test(contents)) {
+          const fmData = fm(contents);
+          data.data = fmData.attributes;
+          data.body = fmData.body;
+        } else {
+          try {
+            data.data = yaml.safeLoad(contents);
+          } catch (e) {
+            throw new PluginError('gulp-minisite', e.message);
+          }
+          if (data.data === undefined) data.data = {};
+          data.body = '';
         }
-        (data.data === undefined) && (data.data = {});
-        data.body = '';
-      } else if (data.document === 'text') {
-        var fmData = fm(file.contents.toString());
-        data.data  = fmData.attributes;
-        data.body  = fmData.body;
       }
       // shallow attribute access
       for (var key in data.data) {
