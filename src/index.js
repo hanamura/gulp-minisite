@@ -2,13 +2,11 @@
 
 var PluginError = require('gulp-util').PluginError;
 var Transform   = require('stream').Transform;
-var fm          = require('front-matter');
 var isEqual     = require('lodash.isequal');
-var path        = require('path');
-var yaml        = require('js-yaml');
 
 var compareOrder = require('./compare-order');
-var parse        = require('./parse');
+
+const Resource = require('./resource');
 
 module.exports = function(options) {
 
@@ -45,134 +43,6 @@ module.exports = function(options) {
     };
   });
 
-  // init file
-  // =========
-
-  var initFile = function(file) {
-    var data = file.data = parse(file.relative, {locales: options.locales});
-
-    // data.locale
-    data.locale || (data.locale = options.defaultLocale);
-
-    // data.document
-    if (~(options.dataExtensions || []).indexOf(data.extname)) {
-      data.document = 'data';
-    } else {
-      data.document = false;
-    }
-
-    // data.filepaths
-    data.filepaths = [];
-    data.filepaths.push(data.locale === options.defaultLocale ? null : data.locale);
-    data.filepaths.push.apply(data.filepaths, data.dirnames);
-    if (data.document) {
-      data.filepaths.push(data.index ? null : data.slug);
-      data.filepaths.push('index.html');
-    } else {
-      data.filepaths.push(data.slug + '.' + data.extname);
-    }
-    data.filepaths = data.filepaths.filter(function(x) { return x });
-
-    // data.filepath
-    data.filepath = path.join.apply(path, data.filepaths);
-
-    // file.path
-    file.path = path.join(file.base, data.filepath);
-
-    return file;
-  };
-
-  // check duplicates
-  // ================
-
-  var checkDuplicates = (function() {
-    var paths = {};
-    return function(file) {
-      if (file.path in paths) {
-        throw new PluginError('gulp-minisite', [
-          'creating two files into the same path: ' + file.path,
-          'file 1: ' + paths[file.path].relative,
-          'file 2: ' + file.relative,
-        ].join('\n'));
-      }
-      paths[file.path] = file;
-    };
-  })();
-
-  // init doc
-  // ========
-
-  var initDoc = (function() {
-    var resourceGroup = {};
-
-    return function(file) {
-      var data   = file.data;
-      var locale = data.locale || '';
-
-      // data.resourceId
-      data.resourceId = data.dirnames.concat(data.index ? [] : [data.slug]).join('/');
-      // references
-      global[locale].references[data.resourceId] = data;
-      // data.locales
-      resourceGroup[data.resourceId] || (resourceGroup[data.resourceId] = {});
-      resourceGroup[data.resourceId][locale] = data;
-      data.locales = resourceGroup[data.resourceId];
-
-      // data.collectionId
-      data.collectionId = data.dirnames.join('/');
-      // collections
-      if (!data.index) {
-        global[locale].collections[data.collectionId] || (global[locale].collections[data.collectionId] = []);
-        global[locale].collections[data.collectionId].push(data);
-        global[locale].collections[data.collectionId].sort(compareOrder)
-          .reduce(function(prev, curr) {
-            curr.prev = prev;
-            curr.next = null;
-            if (!prev) return curr;
-            return prev.next = curr;
-          }, null);
-      }
-      // data.collection
-      global[locale].collections[data.resourceId] || (global[locale].collections[data.resourceId] = []);
-      data.collection = global[locale].collections[data.resourceId];
-
-      // data.paths
-      data.paths = data.filepaths.slice(0, -1);
-      data.paths.unshift('/');
-
-      // data.path
-      data.path = path.join.apply(path, data.paths);
-
-      // pages
-      global[locale].pages.push(data);
-
-      // data & body
-      if (data.document) {
-        const contents = file.contents.toString();
-        if (fm.test(contents)) {
-          const fmData = fm(contents);
-          data.data = fmData.attributes;
-          data.body = fmData.body;
-        } else {
-          try {
-            data.data = yaml.safeLoad(contents);
-          } catch (e) {
-            throw new PluginError('gulp-minisite', e.message);
-          }
-          if (data.data === undefined) data.data = {};
-          data.body = '';
-        }
-      }
-      // shallow attribute access
-      for (var key in data.data) {
-        if (key in data) {
-          continue;
-        }
-        data[key] = data.data[key];
-      }
-    };
-  })();
-
   // ===
   // ===
 
@@ -201,9 +71,6 @@ module.exports = function(options) {
       return done();
     }
 
-    var storedFiles = [];
-    var storedDocs  = [];
-
     const injects = [() => files.slice()];
     if (options.inject && Array.isArray(options.inject)) {
       injects.push.apply(injects, options.inject);
@@ -211,12 +78,80 @@ module.exports = function(options) {
       injects.push(options.inject);
     }
 
+    const storedResources = [];
+    const resourceGroup = {};
+    const filepaths = {};
+
     const proceedFiles = files => {
-      files = files.map(initFile).filter(v => !v.data.draft || options.draft);
-      const docs = files.filter(v => v.data.document);
-      docs.forEach(initDoc);
-      storedFiles = storedFiles.concat(files);
-      storedDocs  = storedDocs.concat(docs);
+      let resources = files.map(file => new Resource(file, options));
+      if (!options.draft) {
+        resources = resources.filter(resource => !resource.draft);
+      }
+
+      resources.forEach(resource => resource._file.data = resource);
+
+      // check duplicates, resource._file.path
+      resources.forEach(resource => {
+        if (resource.filepath in filepaths) {
+          throw new PluginError('gulp-minisite', [
+            'creating two files into the same path: ' + resource.filepath,
+            'file 1: ' + filepaths[resource.filepath]._srcRelative,
+            'file 2: ' + resource._srcRelative,
+          ].join('\n'));
+        }
+        filepaths[resource.filepath] = resource;
+        resource._file.path = resource.filepath
+      });
+
+      const documents = resources
+        .filter(resource => resource.document);
+
+      documents.forEach(resource => {
+        // references
+        global[resource.locale].references[resource.resourceId] = resource;
+
+        // collections
+        if (!resource.index) {
+          if (!global[resource.locale].collections[resource.collectionId]) {
+            global[resource.locale].collections[resource.collectionId] = [];
+          }
+          global[resource.locale].collections[resource.collectionId].push(resource);
+        }
+
+        // pages
+        global[resource.locale].pages.push(resource);
+      });
+
+      documents.forEach(resource => {
+        // resource.locales
+        if (!resourceGroup[resource.resourceId]) {
+          resourceGroup[resource.resourceId] = {};
+        }
+        resourceGroup[resource.resourceId][resource.locale] = resource;
+        resource.locales = resourceGroup[resource.resourceId];
+
+        // resource.collection
+        if (!global[resource.locale].collections[resource.resourceId]) {
+          global[resource.locale].collections[resource.resourceId] = [];
+        }
+        resource.collection = global[resource.locale].collections[resource.resourceId];
+      });
+
+      locales.forEach(locale => {
+        for (const collectionId in global[locale].collections) {
+          // collections sort, resource.prev, resource.next
+          global[locale].collections[collectionId]
+            .sort(compareOrder)
+            .reduce((prev, curr) => {
+              curr.prev = prev;
+              curr.next = null;
+              if (prev) prev.next = curr;
+              return curr;
+            }, null);
+        }
+      });
+
+      storedResources.push.apply(storedResources, resources);
     };
 
     injects
@@ -224,32 +159,35 @@ module.exports = function(options) {
         return promise.then(() => inject(global, options)).then(proceedFiles);
       }, Promise.resolve())
       .then(() => {
-        storedFiles.forEach(checkDuplicates);
-        for (var file of storedDocs) {
-          if (file.data.template) {
-            var locale   = file.data.locale || '';
-            var tmplName = file.data.template;
-            var tmplData = {
-              page:        file.data,
-              site:        global[locale].site,
-              pages:       global[locale].pages,
-              collections: global[locale].collections,
-              references:  global[locale].references,
+        storedResources
+          .filter(resource => resource.document)
+          .forEach(resource => {
+            if (!resource.template) {
+              resource._file.contents = new Buffer(resource.body, 'utf8');
+              return;
+            }
+
+            const context = {
+              page:        resource,
+              site:        global[resource.locale].site,
+              pages:       global[resource.locale].pages,
+              collections: global[resource.locale].collections,
+              references:  global[resource.locale].references,
               global:      global,
             };
-            try {
-              file.contents = new Buffer(options.templateEngine(tmplName, tmplData), 'utf8');
-            } catch (e) {
-              return done(new PluginError('gulp-minisite', e.message));
-            }
-          } else {
-            file.contents = new Buffer(file.data.body, 'utf8');
-          }
-        }
-        storedFiles.forEach(stream.push.bind(stream));
+            const contents = options.templateEngine(resource.template, context);
+            resource._file.contents = new Buffer(contents, 'utf8');
+          });
+
+        storedResources
+          .map(resource => resource._file)
+          .forEach(stream.push.bind(stream));
+
         done();
       })
-      .catch(done);
+      .catch(e => {
+        done(new PluginError('gulp-minisite', e.message));
+      });
 
   };
 

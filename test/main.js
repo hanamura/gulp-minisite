@@ -92,6 +92,8 @@ describe('gulp-minisite', function() {
         .on('error', function(e) {
           expect(e).to.be.an.instanceof(PluginError);
           expect(e.message).to.have.string('same path');
+          expect(e.message).to.have.string('hello.json');
+          expect(e.message).to.have.string('hello.yml');
           done();
         });
     });
@@ -566,6 +568,227 @@ describe('gulp-minisite', function() {
           expect(file.data.myData).to.equal('World');
         }))
         .pipe(assert.end(done));
+    });
+
+    it('should have order property', cb => {
+      array([
+        create('foo.yml', {}),
+        create('#1.bar.yml', {}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(2))
+        .pipe(assert.first(file => {
+          expect(file.data.order).to.be.null;
+        }))
+        .pipe(assert.second(file => {
+          expect(file.data.order).to.not.be.null;
+          expect(file.data.order).to.equal('1');
+        }))
+        .pipe(assert.end(cb));
+    });
+
+    it('should have draft property', cb => {
+      array([
+        create('foo.yml', {}),
+        create('_bar.yml', {}),
+      ])
+        .pipe(minisite({draft: true}))
+        .pipe(assert.length(2))
+        .pipe(assert.first(file => {
+          expect(file.data.draft).to.be.false;
+        }))
+        .pipe(assert.second(file => {
+          expect(file.data.draft).to.be.true;
+        }))
+        .pipe(assert.end(cb));
+    });
+
+    it('should have slug property', cb => {
+      array([
+        create('foo.yml', {}),
+        create('#1.bar.yml', {}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(2))
+        .pipe(assert.first(file => {
+          expect(file.data.slug).to.equal('foo');
+        }))
+        .pipe(assert.second(file => {
+          expect(file.data.slug).to.equal('bar');
+        }))
+        .pipe(assert.end(cb));
+    });
+
+    it('should have locale property', cb => {
+      array([
+        create('foo.yml', {}),
+        create('bar.en.yml', {}),
+        create('baz.ja.yml', {}),
+      ])
+        .pipe(minisite({locales: ['en', 'ja']}))
+        .pipe(assert.length(3))
+        .pipe(assert.first(file => {
+          expect(file.data.locale).to.equal('');
+        }))
+        .pipe(assert.second(file => {
+          expect(file.data.locale).to.equal('en');
+        }))
+        .pipe(assert.nth(2, file => {
+          expect(file.data.locale).to.equal('ja');
+        }))
+        .pipe(assert.end(cb));
+    });
+
+    it('should have document property', cb => {
+      array([
+        create('foo.yml', {}),
+        create('bar.txt', {}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(2))
+        .pipe(assert.first(file => {
+          expect(file.data.document).to.be.true;
+        }))
+        .pipe(assert.second(file => {
+          expect(file.data.document).to.be.false;
+        }))
+        .pipe(assert.end(cb));
+    });
+
+    it('should have dirnames property', cb => {
+      array([
+        create('foo.yml', {}),
+        create('foo/bar.yml', {}),
+        create('foo/bar/baz.yml', {}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(3))
+        .pipe(assert.first(file => {
+          expect(file.data.dirnames).to.eql(['foo']);
+        }))
+        .pipe(assert.second(file => {
+          expect(file.data.dirnames).to.eql(['foo', 'bar']);
+        }))
+        .pipe(assert.nth(2, file => {
+          expect(file.data.dirnames).to.eql(['foo', 'bar', 'baz']);
+        }))
+        .pipe(assert.end(cb));
+    });
+
+    it('should have path property', cb => {
+      array([
+        create('foo.yml', {}),
+        create('foo/bar.yml', {}),
+        create('foo/bar/baz.yml', {}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(3))
+        .pipe(assert.first(file => {
+          expect(file.data.path).to.equal('/foo');
+        }))
+        .pipe(assert.second(file => {
+          expect(file.data.path).to.equal('/foo/bar');
+        }))
+        .pipe(assert.nth(2, file => {
+          expect(file.data.path).to.equal('/foo/bar/baz');
+        }))
+        .pipe(assert.end(cb));
+    });
+
+    it('should have filepath property', cb => {
+      array([
+        create('foo.yml', {}),
+        create('foo/bar.yml', {}),
+        create('foo/bar/baz.yml', {}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(3))
+        .pipe(assert.first(file => {
+          expect(file.data.filepath).to.equal('/root/base/foo/index.html');
+        }))
+        .pipe(assert.second(file => {
+          expect(file.data.filepath).to.equal('/root/base/foo/bar/index.html');
+        }))
+        .pipe(assert.nth(2, file => {
+          expect(file.data.filepath).to.equal('/root/base/foo/bar/baz/index.html');
+        }))
+        .pipe(assert.end(cb));
+    });
+
+    it('should have resourceId property', cb => {
+      array([
+        create('foo.yml', {}),
+        create('foo/bar.yml', {}),
+        create('foo/bar/baz.yml', {}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(3))
+        .pipe(assert.first(file => {
+          expect(file.data.resourceId).to.equal('foo');
+        }))
+        .pipe(assert.second(file => {
+          expect(file.data.resourceId).to.equal('foo/bar');
+        }))
+        .pipe(assert.nth(2, file => {
+          expect(file.data.resourceId).to.equal('foo/bar/baz');
+        }))
+        .pipe(assert.end(cb));
+    });
+
+    it('should have collectionId property', cb => {
+      array([
+        create('foo.yml', {}),
+        create('foo/bar.yml', {}),
+        create('foo/bar/baz.yml', {}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(3))
+        .pipe(assert.first(file => {
+          expect(file.data.collectionId).to.equal('');
+        }))
+        .pipe(assert.second(file => {
+          expect(file.data.collectionId).to.equal('foo');
+        }))
+        .pipe(assert.nth(2, file => {
+          expect(file.data.collectionId).to.equal('foo/bar');
+        }))
+        .pipe(assert.end(cb));
+    });
+
+    it('should have data property', cb => {
+      array([
+        create('foo.yml', {title: 'Foo'}),
+        create('bar.yml', {}),
+        create('baz.yml', 'Baz'),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(3))
+        .pipe(assert.first(file => {
+          expect(file.data.data).to.eql({title: 'Foo'});
+        }))
+        .pipe(assert.second(file => {
+          expect(file.data.data).to.eql({});
+        }))
+        .pipe(assert.nth(2, file => {
+          expect(file.data.data).to.equal('Baz');
+        }))
+        .pipe(assert.end(cb));
+    });
+
+    it('should have body property', cb => {
+      array([
+        create('foo.yml', {}),
+        create('bar.md', {}, 'Bar'),
+      ])
+        .pipe(minisite({dataExtensions: ['yml', 'md']}))
+        .pipe(assert.length(2))
+        .pipe(assert.first(file => {
+          expect(file.data.body).to.equal('');
+        }))
+        .pipe(assert.second(file => {
+          expect(file.data.body).to.equal('Bar');
+        }))
+        .pipe(assert.end(cb));
     });
 
   });
