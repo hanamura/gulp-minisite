@@ -92,6 +92,8 @@ describe('gulp-minisite', function() {
         .on('error', function(e) {
           expect(e).to.be.an.instanceof(PluginError);
           expect(e.message).to.have.string('same path');
+          expect(e.message).to.have.string('hello.json');
+          expect(e.message).to.have.string('hello.yml');
           done();
         });
     });
