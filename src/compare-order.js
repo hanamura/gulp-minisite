@@ -1,23 +1,17 @@
 'use strict';
 
-module.exports = function(a, b) {
-  var aOrder = a.order;
-  var bOrder = b.order;
-
-  if (aOrder !== undefined && bOrder !== undefined) {
-    if (aOrder < bOrder) { return -1 }
-    if (aOrder > bOrder) { return 1 }
-  } else if (aOrder !== undefined) {
+module.exports = (a, b) => {
+  if (a.order !== null && b.order !== null) {
+    if (a.order < b.order) return -1;
+    if (a.order > b.order) return 1;
+  } else if (a.order !== null) {
     return 1;
-  } else if (bOrder !== undefined) {
+  } else if (b.order !== null) {
     return -1;
   }
 
-  var aSlug = a.slug;
-  var bSlug = b.slug;
-
-  if (aSlug < bSlug) { return -1 }
-  if (aSlug > bSlug) { return 1 }
+  if (a.slug < b.slug) return -1;
+  if (a.slug > b.slug) return 1;
 
   return 0;
 };
