@@ -105,8 +105,7 @@ describe('gulp-minisite', function() {
         .on('error', function(e) {
           expect(e).to.be.an.instanceof(PluginError);
           done();
-        })
-        .pipe(assert.end(done));
+        });
     });
 
     it('should treat YAML as document', function(done) {
