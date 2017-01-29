@@ -105,8 +105,7 @@ describe('gulp-minisite', function() {
         .on('error', function(e) {
           expect(e).to.be.an.instanceof(PluginError);
           done();
-        })
-        .pipe(assert.end(done));
+        });
     });
 
     it('should treat YAML as document', function(done) {
@@ -1149,16 +1148,16 @@ describe('gulp-minisite', function() {
 
     it('should inject files (pagination example)', function(done) {
       array([
-          create('items/01.yml'),
-          create('items/02.yml'),
-          create('items/03.yml'),
-          create('items/04.yml'),
-          create('items/05.yml'),
-          create('items/06.yml'),
-          create('items/07.yml'),
-          create('items/08.yml'),
-          create('items/09.yml'),
-          create('items/10.yml'),
+        create('items/01.yml'),
+        create('items/02.yml'),
+        create('items/03.yml'),
+        create('items/04.yml'),
+        create('items/05.yml'),
+        create('items/06.yml'),
+        create('items/07.yml'),
+        create('items/08.yml'),
+        create('items/09.yml'),
+        create('items/10.yml'),
       ])
         .pipe(minisite({
           inject: function(global, options) {
@@ -1192,16 +1191,16 @@ describe('gulp-minisite', function() {
 
     it('should inject files (category example)', function(done) {
       array([
-          create('items/01.yml', {category: 'a'}),
-          create('items/02.yml', {category: 'b'}),
-          create('items/03.yml', {category: 'c'}),
-          create('items/04.yml', {category: 'b'}),
-          create('items/05.yml', {category: 'b'}),
-          create('items/06.yml', {category: 'c'}),
-          create('items/07.yml', {category: 'a'}),
-          create('items/08.yml', {category: 'd'}),
-          create('items/09.yml', {category: 'c'}),
-          create('items/10.yml', {category: 'c'}),
+        create('items/01.yml', {category: 'a'}),
+        create('items/02.yml', {category: 'b'}),
+        create('items/03.yml', {category: 'c'}),
+        create('items/04.yml', {category: 'b'}),
+        create('items/05.yml', {category: 'b'}),
+        create('items/06.yml', {category: 'c'}),
+        create('items/07.yml', {category: 'a'}),
+        create('items/08.yml', {category: 'd'}),
+        create('items/09.yml', {category: 'c'}),
+        create('items/10.yml', {category: 'c'}),
       ])
         .pipe(minisite({
           inject: function(global, options) {
@@ -1244,16 +1243,16 @@ describe('gulp-minisite', function() {
 
     it('should inject files (date example)', function(done) {
       array([
-          create('items/01.yml', {date: '2014-10-10'}),
-          create('items/02.yml', {date: '2015-07-15'}),
-          create('items/03.yml', {date: '2015-07-20'}),
-          create('items/04.yml', {date: '2015-07-25'}),
-          create('items/05.yml', {date: '2015-07-30'}),
-          create('items/06.yml', {date: '2015-09-10'}),
-          create('items/07.yml', {date: '2015-09-20'}),
-          create('items/08.yml', {date: '2015-09-30'}),
-          create('items/09.yml', {date: '2015-10-10'}),
-          create('items/10.yml', {date: '2015-10-25'}),
+        create('items/01.yml', {date: '2014-10-10'}),
+        create('items/02.yml', {date: '2015-07-15'}),
+        create('items/03.yml', {date: '2015-07-20'}),
+        create('items/04.yml', {date: '2015-07-25'}),
+        create('items/05.yml', {date: '2015-07-30'}),
+        create('items/06.yml', {date: '2015-09-10'}),
+        create('items/07.yml', {date: '2015-09-20'}),
+        create('items/08.yml', {date: '2015-09-30'}),
+        create('items/09.yml', {date: '2015-10-10'}),
+        create('items/10.yml', {date: '2015-10-25'}),
       ])
         .pipe(minisite({
           inject: function(global, options) {
@@ -1301,22 +1300,22 @@ describe('gulp-minisite', function() {
 
     it('should inject files multiple times', function(done) {
       array([
-          create('index.yml'),
-          create('items/01.yml', {keyword: 'a'}),
-          create('items/02.yml', {keyword: 'b'}),
-          create('items/03.yml', {keyword: 'c'}),
-          create('items/04.yml', {keyword: 'd'}),
-          create('items/05.yml', {keyword: 'd'}),
-          create('items/06.yml', {keyword: 'd'}),
-          create('items/07.yml', {keyword: 'b'}),
-          create('items/08.yml', {keyword: 'c'}),
-          create('items/09.yml', {keyword: 'a'}),
-          create('items/10.yml', {keyword: 'c'}),
-          create('pages/01.yml', {keyword: 'a'}),
-          create('pages/02.yml', {keyword: 'c'}),
-          create('pages/03.yml', {keyword: 'd'}),
-          create('pages/04.yml', {keyword: 'c'}),
-          create('pages/05.yml', {keyword: 'b'}),
+        create('index.yml'),
+        create('items/01.yml', {keyword: 'a'}),
+        create('items/02.yml', {keyword: 'b'}),
+        create('items/03.yml', {keyword: 'c'}),
+        create('items/04.yml', {keyword: 'd'}),
+        create('items/05.yml', {keyword: 'd'}),
+        create('items/06.yml', {keyword: 'd'}),
+        create('items/07.yml', {keyword: 'b'}),
+        create('items/08.yml', {keyword: 'c'}),
+        create('items/09.yml', {keyword: 'a'}),
+        create('items/10.yml', {keyword: 'c'}),
+        create('pages/01.yml', {keyword: 'a'}),
+        create('pages/02.yml', {keyword: 'c'}),
+        create('pages/03.yml', {keyword: 'd'}),
+        create('pages/04.yml', {keyword: 'c'}),
+        create('pages/05.yml', {keyword: 'b'}),
       ])
         .pipe(minisite({
           inject: [
