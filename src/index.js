@@ -96,9 +96,9 @@ module.exports = function(options) {
       resources.forEach(resource => {
         if (resource.filepath in filepaths) {
           throw new Error([
-            'creating two files into the same path: ' + resource.filepath,
-            'file 1: ' + filepaths[resource.filepath]._srcRelative,
-            'file 2: ' + resource._srcRelative,
+            `creating two files into the same path: ${resource.filepath}`,
+            `file 1: ${filepaths[resource.filepath]._srcRelative}`,
+            `file 2: ${resource._srcRelative}`,
           ].join('\n'));
         }
         filepaths[resource.filepath] = resource;
