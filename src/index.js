@@ -1,16 +1,15 @@
 'use strict';
 
-var PluginError = require('gulp-util').PluginError;
-var Transform   = require('stream').Transform;
-var isEqual     = require('lodash.isequal');
+const PluginError = require('gulp-util').PluginError;
+const Transform   = require('stream').Transform;
+const isEqual     = require('lodash.isequal');
 
-var compareOrder = require('./compare-order');
-
-const Resource = require('./resource');
+const Resource     = require('./resource');
+const compareOrder = require('./compare-order');
 
 const PLUGIN_NAME = 'gulp-minisite';
 
-module.exports = function(options) {
+module.exports = options => {
 
   options = Object.assign({
     defaultLocale:  null,
@@ -25,18 +24,18 @@ module.exports = function(options) {
   // template data
   // =============
 
-  var locales = [''].concat(options.locales || []);
+  const locales = [''].concat(options.locales || []);
 
-  var multilocaleSite = (
+  const multilocaleSite = (
     locales.length > 1 &&
     isEqual(
-      Object.keys(options.site || {}).filter(function(x) { return x }).sort(),
+      Object.keys(options.site || {}).filter(x => x).sort(),
       options.locales.slice().sort()
     )
   );
 
-  var global = {};
-  locales.forEach(function(locale) {
+  const global = {};
+  locales.forEach(locale => {
     global[locale] = {
       pages:       [],
       collections: {},
@@ -48,12 +47,12 @@ module.exports = function(options) {
   // ===
   // ===
 
-  var files = [];
+  const files = [];
 
   // transform
   // =========
 
-  var transform = function(file, _, done) {
+  const transform = (file, _, done) => {
     if (file.isNull()) {
       return done(null, file);
     }
@@ -68,7 +67,7 @@ module.exports = function(options) {
   // flush
   // =====
 
-  var flush = function(done) {
+  const flush = done => {
     if (!files.length) {
       return done();
     }
@@ -196,7 +195,7 @@ module.exports = function(options) {
   // stream
   // ======
 
-  var stream = new Transform({
+  const stream = new Transform({
     objectMode: true,
     transform: transform,
     flush: flush,
