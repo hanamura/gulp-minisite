@@ -8,6 +8,8 @@ var compareOrder = require('./compare-order');
 
 const Resource = require('./resource');
 
+const PLUGIN_NAME = 'gulp-minisite';
+
 module.exports = function(options) {
 
   options = Object.assign({
@@ -56,7 +58,7 @@ module.exports = function(options) {
       return done(null, file);
     }
     if (file.isStream()) {
-      return done(new PluginError('gulp-minisite', 'Streaming not supported'));
+      return done(new PluginError(PLUGIN_NAME, 'Streaming not supported'));
     }
 
     files.push(file);
@@ -93,10 +95,10 @@ module.exports = function(options) {
       // check duplicates, resource._file.path
       resources.forEach(resource => {
         if (resource.filepath in filepaths) {
-          throw new PluginError('gulp-minisite', [
-            'creating two files into the same path: ' + resource.filepath,
-            'file 1: ' + filepaths[resource.filepath]._srcRelative,
-            'file 2: ' + resource._srcRelative,
+          throw new Error([
+            `creating two files into the same path: ${resource.filepath}`,
+            `file 1: ${filepaths[resource.filepath]._srcRelative}`,
+            `file 2: ${resource._srcRelative}`,
           ].join('\n'));
         }
         filepaths[resource.filepath] = resource;
@@ -186,7 +188,7 @@ module.exports = function(options) {
         done();
       })
       .catch(e => {
-        done(new PluginError('gulp-minisite', e.message));
+        done(new PluginError(PLUGIN_NAME, e.message));
       });
 
   };
