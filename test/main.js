@@ -1,12 +1,13 @@
 'use strict';
 
-const File    = require('gulp-util').File;
-const array   = require('stream-array');
-const assert  = require('stream-assert');
-const chunk   = require('lodash.chunk');
-const expect  = require('chai').expect;
-const groupBy = require('lodash.groupby');
-const yaml    = require('js-yaml');
+const File        = require('gulp-util').File;
+const PluginError = require('gulp-util').PluginError;
+const array       = require('stream-array');
+const assert      = require('stream-assert');
+const chunk       = require('lodash.chunk');
+const expect      = require('chai').expect;
+const groupBy     = require('lodash.groupby');
+const yaml        = require('js-yaml');
 
 const minisite = require('../src');
 
@@ -85,7 +86,6 @@ describe('gulp-minisite', () => {
     });
 
     it('should throw PluginError if two files have the same path', done => {
-      const PluginError = require('gulp-util').PluginError;
       array([
         create('hello.json', {}),
         create('hello.yml', {}),
@@ -101,7 +101,6 @@ describe('gulp-minisite', () => {
     });
 
     it('should throw PluginError on YAML syntax error', done => {
-      const PluginError = require('gulp-util').PluginError;
       array([create('hello.yml', null, 'x:\nx')])
         .pipe(minisite())
         .on('error', e => {
