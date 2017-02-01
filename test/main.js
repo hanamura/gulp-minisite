@@ -190,6 +190,18 @@ describe('gulp-minisite', () => {
         .pipe(assert.end(done));
     });
 
+    it('should not allow document to override reserved property', cb => {
+      array([create('foo.yml', {resourceId: 'id'})])
+        .pipe(minisite())
+        .pipe(assert.length(1))
+        .pipe(assert.first(file => {
+          expect(file.data.resourceId).to.not.equal('id');
+          expect(file.data.resourceId).to.equal('foo');
+          expect(file.data.data.resourceId).to.equal('id');
+        }))
+        .pipe(assert.end(cb));
+    });
+
   });
 
   // locale
