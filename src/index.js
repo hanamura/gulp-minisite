@@ -160,12 +160,16 @@ module.exports = options => {
         return promise.then(() => inject(global, options)).then(proceedFiles);
       }, Promise.resolve())
       .then(() => {
-        storedResources
-          .filter(resource => resource.document)
-          .forEach(resource => {
+        const promises = storedResources
+          .map(resource => {
+            if (!resource.document) {
+              return Promise.resolve(resource);
+            }
             if (!resource.template) {
-              resource._file.contents = new Buffer(resource.body, 'utf8');
-              return;
+              return Promise.resolve().then(() => {
+                resource._file.contents = new Buffer(resource.body, 'utf8');
+                return resource;
+              });
             }
 
             const context = {
@@ -176,14 +180,18 @@ module.exports = options => {
               references:  global[resource.locale].references,
               global:      global,
             };
-            const contents = options.templateEngine(resource.template, context);
-            resource._file.contents = new Buffer(contents, 'utf8');
+            return Promise.resolve()
+              .then(() => options.templateEngine(resource.template, context))
+              .then(contents => {
+                resource._file.contents = new Buffer(contents, 'utf8');
+                return resource;
+              });
           });
 
-        storedResources
-          .map(resource => resource._file)
-          .forEach(stream.push.bind(stream));
-
+        return Promise.all(promises);
+      })
+      .then(resources => {
+        resources.forEach(resource => stream.push(resource._file));
         done();
       })
       .catch(e => {
