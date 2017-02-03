@@ -15,7 +15,7 @@ module.exports = options => {
     defaultLocale:  null,
     locales:        null,
     site:           null,
-    templateEngine: require('./engines/nunjucks')(),
+    render:         require('./engines/nunjucks')(),
     draft:          false,
     dataExtensions: ['yml', 'yaml', 'json'],
     inject:         null,
@@ -181,7 +181,7 @@ module.exports = options => {
               global:      global,
             };
             return Promise.resolve()
-              .then(() => options.templateEngine(resource.template, context))
+              .then(() => options.render(resource.template, context))
               .then(contents => {
                 resource._file.contents = new Buffer(contents, 'utf8');
                 return resource;
