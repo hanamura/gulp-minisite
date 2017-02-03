@@ -349,7 +349,7 @@ describe('gulp-minisite', () => {
         description: 'World',
       })])
         .pipe(minisite({
-          templateEngine: engineNunjucks({path: 'test/tmpl-basic'}),
+          render: engineNunjucks({path: 'test/tmpl-basic'}),
         }))
         .pipe(assert.length(1))
         .pipe(assert.first(file => {
@@ -365,7 +365,7 @@ describe('gulp-minisite', () => {
         description: 'World',
       })])
         .pipe(minisite({
-          templateEngine: (_, tmplData) => {
+          render: (_, tmplData) => {
             const nunjucks = require('nunjucks');
             nunjucks.configure({noCache: true});
             return nunjucks.renderString('{{ page.title }} - {{ page.description }}', tmplData);
@@ -384,7 +384,7 @@ describe('gulp-minisite', () => {
         title: 'Hello',
       })])
         .pipe(minisite({
-          templateEngine: engineNunjucks({path: 'test/tmpl-inheritance'}),
+          render: engineNunjucks({path: 'test/tmpl-inheritance'}),
         }))
         .pipe(assert.length(1))
         .pipe(assert.first(file => {
@@ -399,7 +399,7 @@ describe('gulp-minisite', () => {
         title: 'Hello',
       })])
         .pipe(minisite({
-          templateEngine: engineNunjucks({path: 'test/tmpl-include'}),
+          render: engineNunjucks({path: 'test/tmpl-include'}),
         }))
         .pipe(assert.length(1))
         .pipe(assert.first(file => {
@@ -413,7 +413,7 @@ describe('gulp-minisite', () => {
         template: 'hello.html',
       }, 'Hello **World**')])
         .pipe(minisite({
-          templateEngine: engineNunjucks({path: 'test/tmpl-markdown'}),
+          render: engineNunjucks({path: 'test/tmpl-markdown'}),
           dataExtensions: ['md'],
         }))
         .pipe(assert.length(1))
@@ -430,7 +430,7 @@ describe('gulp-minisite', () => {
         nullValue: null,
       })])
         .pipe(minisite({
-          templateEngine: engineNunjucks({path: 'test/tmpl-markdown-null'}),
+          render: engineNunjucks({path: 'test/tmpl-markdown-null'}),
         }))
         .pipe(assert.length(1))
         .pipe(assert.end(done));
@@ -443,7 +443,7 @@ describe('gulp-minisite', () => {
         description: 'World',
       })])
         .pipe(minisite({
-          templateEngine: (tmplName, tmplData) => {
+          render: (tmplName, tmplData) => {
             return new Promise((resolve, reject) => {
               setTimeout(() => {
                 const render = engineNunjucks({path: 'test/tmpl-basic'});
@@ -470,7 +470,7 @@ describe('gulp-minisite', () => {
       array([create('hello.yml', {title: 'Hello', template: true})])
         .pipe(minisite({
           site: {name: 'Site'},
-          templateEngine: (_, tmplData) => {
+          render: (_, tmplData) => {
             expect(tmplData.site.name).to.equal('Site');
             return tmplData.page.title;
           },
@@ -495,7 +495,7 @@ describe('gulp-minisite', () => {
             en: {name: 'En'},
             ja: {name: 'Ja'},
           },
-          templateEngine: (_, tmplData) => {
+          render: (_, tmplData) => {
             expect(tmplData.site).to.not.have.property('');
             expect(tmplData.site).to.not.have.property('en');
             expect(tmplData.site).to.not.have.property('ja');
@@ -540,7 +540,7 @@ describe('gulp-minisite', () => {
             en: {name: 'En'},
             ja: {name: 'Ja'},
           },
-          templateEngine: (_, tmplData) => {
+          render: (_, tmplData) => {
             expect(tmplData.site.name).to.equal('Site');
             expect(tmplData.site[''].name).to.equal('No locale');
             expect(tmplData.site.en.name).to.equal('En');
@@ -574,7 +574,7 @@ describe('gulp-minisite', () => {
             en: {name: 'En'},
             ja: {name: 'Ja'},
           },
-          templateEngine: (_, tmplData) => {
+          render: (_, tmplData) => {
             expect(tmplData.global[''].site.name).to.equal('No locale');
             expect(tmplData.global['en'].site.name).to.equal('En');
             expect(tmplData.global['ja'].site.name).to.equal('Ja');
@@ -1007,7 +1007,7 @@ describe('gulp-minisite', () => {
         create('items/baz.yml', {title: 'BAZ'}),
         create('items/qux.yml', {title: 'QUX'}),
       ])
-        .pipe(minisite({templateEngine: (_, tmplData) => {
+        .pipe(minisite({render: (_, tmplData) => {
           expect(tmplData.pages).to.have.length(5);
           return tmplData.page.title;
         }}))
@@ -1034,7 +1034,7 @@ describe('gulp-minisite', () => {
         .pipe(minisite({
           locales: ['en', 'ja'],
           defaultLocale: 'en',
-          templateEngine: (_, tmplData) => {
+          render: (_, tmplData) => {
             expect(tmplData.pages).to.have.length(5);
             expect(tmplData.global['en'].pages).to.have.length(5);
             expect(tmplData.global['ja'].pages).to.have.length(5);
@@ -1060,7 +1060,7 @@ describe('gulp-minisite', () => {
         create('foo.yml', {template: true, title: 'FOO'}),
         create('bar/baz.yml', {title: 'BAZ'}),
       ])
-        .pipe(minisite({templateEngine: (_, tmplData) => {
+        .pipe(minisite({render: (_, tmplData) => {
           expect(tmplData.references['foo'].title).to.equal('FOO');
           expect(tmplData.references['bar/baz'].title).to.equal('BAZ');
           return tmplData.page.title;
@@ -1082,7 +1082,7 @@ describe('gulp-minisite', () => {
         .pipe(minisite({
           locales: ['en', 'ja'],
           defaultLocale: 'en',
-          templateEngine: (_, tmplData) => {
+          render: (_, tmplData) => {
             expect(tmplData.references['foo'].title).to.equal('FOO');
             expect(tmplData.global['en'].references['foo'].title).to.equal('FOO');
             expect(tmplData.global['en'].references['bar/baz'].title).to.equal('BAZ');
@@ -1113,7 +1113,7 @@ describe('gulp-minisite', () => {
         create('products/category/foo.yml', {title: 'FOO'}),
         create('products/category/bar.yml', {title: 'BAR'}),
       ])
-        .pipe(minisite({templateEngine: (_, tmplData) => {
+        .pipe(minisite({render: (_, tmplData) => {
           expect(tmplData.collections['items']).to.be.an('array');
           expect(tmplData.collections['items']).to.have.length(3);
           expect(tmplData.collections['products/category']).to.be.an('array');
@@ -1139,7 +1139,7 @@ describe('gulp-minisite', () => {
         .pipe(minisite({
           locales: ['en', 'ja'],
           defaultLocale: 'en',
-          templateEngine: (_, tmplData) => {
+          render: (_, tmplData) => {
             expect(tmplData.collections['items']).to.be.an('array');
             expect(tmplData.global['en'].collections['items']).to.be.an('array');
             expect(tmplData.global['en'].collections['items']).to.have.length(3);
@@ -1161,7 +1161,7 @@ describe('gulp-minisite', () => {
         create('items/#3.baz.yml', {title: 'BAZ'}),
         create('items/#1.foo.yml', {title: 'FOO'}),
       ])
-        .pipe(minisite({templateEngine: (_, tmplData) => {
+        .pipe(minisite({render: (_, tmplData) => {
           expect(tmplData.collections['items']).to.be.an('array');
           expect(tmplData.collections['items']).to.have.length(3);
           expect(tmplData.collections['items'][0].title).to.equal('FOO');
