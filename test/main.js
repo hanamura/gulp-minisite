@@ -435,6 +435,30 @@ describe('gulp-minisite', () => {
         .pipe(assert.end(done));
     });
 
+    it('should render content asynchronously', done => {
+      array([create('hello.yml', {
+        template: 'hello.html',
+        title: 'Hello',
+        description: 'World',
+      })])
+        .pipe(minisite({
+          templateEngine: (tmplName, tmplData) => {
+            return new Promise((resolve, reject) => {
+              setTimeout(() => {
+                const nunjucks = require('../src/engines/nunjucks.js');
+                const render = nunjucks({path: 'test/tmpl-basic'});
+                resolve(render(tmplName, tmplData));
+              }, 500);
+            });
+          },
+        }))
+        .pipe(assert.length(1))
+        .pipe(assert.first(file => {
+          expect(file.contents.toString().trim()).to.equal('Hello - World');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 
   // template variable: site
