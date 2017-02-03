@@ -9,7 +9,8 @@ const expect      = require('chai').expect;
 const groupBy     = require('lodash.groupby');
 const yaml        = require('js-yaml');
 
-const minisite = require('../src');
+const engineNunjucks = require('../src/engines/nunjucks');
+const minisite       = require('../src');
 
 const create = (filename, attr, body) => {
   const contents = [];
@@ -348,7 +349,7 @@ describe('gulp-minisite', () => {
         description: 'World',
       })])
         .pipe(minisite({
-          templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-basic'}),
+          templateEngine: engineNunjucks({path: 'test/tmpl-basic'}),
         }))
         .pipe(assert.length(1))
         .pipe(assert.first(file => {
@@ -383,7 +384,7 @@ describe('gulp-minisite', () => {
         title: 'Hello',
       })])
         .pipe(minisite({
-          templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-inheritance'}),
+          templateEngine: engineNunjucks({path: 'test/tmpl-inheritance'}),
         }))
         .pipe(assert.length(1))
         .pipe(assert.first(file => {
@@ -398,7 +399,7 @@ describe('gulp-minisite', () => {
         title: 'Hello',
       })])
         .pipe(minisite({
-          templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-include'}),
+          templateEngine: engineNunjucks({path: 'test/tmpl-include'}),
         }))
         .pipe(assert.length(1))
         .pipe(assert.first(file => {
@@ -412,7 +413,7 @@ describe('gulp-minisite', () => {
         template: 'hello.html',
       }, 'Hello **World**')])
         .pipe(minisite({
-          templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-markdown'}),
+          templateEngine: engineNunjucks({path: 'test/tmpl-markdown'}),
           dataExtensions: ['md'],
         }))
         .pipe(assert.length(1))
@@ -429,9 +430,32 @@ describe('gulp-minisite', () => {
         nullValue: null,
       })])
         .pipe(minisite({
-          templateEngine: require('../src/engines/nunjucks')({path: 'test/tmpl-markdown-null'}),
+          templateEngine: engineNunjucks({path: 'test/tmpl-markdown-null'}),
         }))
         .pipe(assert.length(1))
+        .pipe(assert.end(done));
+    });
+
+    it('should render content asynchronously', done => {
+      array([create('hello.yml', {
+        template: 'hello.html',
+        title: 'Hello',
+        description: 'World',
+      })])
+        .pipe(minisite({
+          templateEngine: (tmplName, tmplData) => {
+            return new Promise((resolve, reject) => {
+              setTimeout(() => {
+                const render = engineNunjucks({path: 'test/tmpl-basic'});
+                resolve(render(tmplName, tmplData));
+              }, 500);
+            });
+          },
+        }))
+        .pipe(assert.length(1))
+        .pipe(assert.first(file => {
+          expect(file.contents.toString().trim()).to.equal('Hello - World');
+        }))
         .pipe(assert.end(done));
     });
 
