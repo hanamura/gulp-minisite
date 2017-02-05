@@ -365,10 +365,13 @@ describe('gulp-minisite', () => {
         description: 'World',
       })])
         .pipe(minisite({
-          render: (_, tmplData) => {
+          render: context => {
+            if (!context.page.template) {
+              return context.page.body;
+            }
             const nunjucks = require('nunjucks');
             nunjucks.configure({noCache: true});
-            return nunjucks.renderString('{{ page.title }} - {{ page.description }}', tmplData);
+            return nunjucks.renderString('{{ page.title }} - {{ page.description }}', context);
           },
         }))
         .pipe(assert.length(1))
@@ -443,11 +446,11 @@ describe('gulp-minisite', () => {
         description: 'World',
       })])
         .pipe(minisite({
-          render: (tmplName, tmplData) => {
+          render: context => {
             return new Promise((resolve, reject) => {
               setTimeout(() => {
                 const render = engineNunjucks({path: 'test/tmpl-basic'});
-                resolve(render(tmplName, tmplData));
+                resolve(render(context));
               }, 500);
             });
           },
@@ -470,9 +473,12 @@ describe('gulp-minisite', () => {
       array([create('hello.yml', {title: 'Hello', template: true})])
         .pipe(minisite({
           site: {name: 'Site'},
-          render: (_, tmplData) => {
-            expect(tmplData.site.name).to.equal('Site');
-            return tmplData.page.title;
+          render: context => {
+            if (!context.page.template) {
+              return context.page.body;
+            }
+            expect(context.site.name).to.equal('Site');
+            return context.page.title;
           },
         }))
         .pipe(assert.length(1))
@@ -495,22 +501,25 @@ describe('gulp-minisite', () => {
             en: {name: 'En'},
             ja: {name: 'Ja'},
           },
-          render: (_, tmplData) => {
-            expect(tmplData.site).to.not.have.property('');
-            expect(tmplData.site).to.not.have.property('en');
-            expect(tmplData.site).to.not.have.property('ja');
+          render: context => {
+            if (!context.page.template) {
+              return context.page.body;
+            }
+            expect(context.site).to.not.have.property('');
+            expect(context.site).to.not.have.property('en');
+            expect(context.site).to.not.have.property('ja');
             ({
               '': () => {
-                expect(tmplData.site.name).to.equal('No locale');
+                expect(context.site.name).to.equal('No locale');
               },
               en: () => {
-                expect(tmplData.site.name).to.equal('En');
+                expect(context.site.name).to.equal('En');
               },
               ja: () => {
-                expect(tmplData.site.name).to.equal('Ja');
+                expect(context.site.name).to.equal('Ja');
               },
-            })[tmplData.page.locale || '']();
-            return tmplData.page.title;
+            })[context.page.locale || '']();
+            return context.page.title;
           },
         }))
         .pipe(assert.length(3))
@@ -540,12 +549,15 @@ describe('gulp-minisite', () => {
             en: {name: 'En'},
             ja: {name: 'Ja'},
           },
-          render: (_, tmplData) => {
-            expect(tmplData.site.name).to.equal('Site');
-            expect(tmplData.site[''].name).to.equal('No locale');
-            expect(tmplData.site.en.name).to.equal('En');
-            expect(tmplData.site.ja.name).to.equal('Ja');
-            return tmplData.page.title;
+          render: context => {
+            if (!context.page.template) {
+              return context.page.body;
+            }
+            expect(context.site.name).to.equal('Site');
+            expect(context.site[''].name).to.equal('No locale');
+            expect(context.site.en.name).to.equal('En');
+            expect(context.site.ja.name).to.equal('Ja');
+            return context.page.title;
           },
         }))
         .pipe(assert.length(3))
@@ -574,11 +586,14 @@ describe('gulp-minisite', () => {
             en: {name: 'En'},
             ja: {name: 'Ja'},
           },
-          render: (_, tmplData) => {
-            expect(tmplData.global[''].site.name).to.equal('No locale');
-            expect(tmplData.global['en'].site.name).to.equal('En');
-            expect(tmplData.global['ja'].site.name).to.equal('Ja');
-            return tmplData.page.title;
+          render: context => {
+            if (!context.page.template) {
+              return context.page.body;
+            }
+            expect(context.global[''].site.name).to.equal('No locale');
+            expect(context.global['en'].site.name).to.equal('En');
+            expect(context.global['ja'].site.name).to.equal('Ja');
+            return context.page.title;
           },
         }))
         .pipe(assert.length(3))
@@ -1007,9 +1022,12 @@ describe('gulp-minisite', () => {
         create('items/baz.yml', {title: 'BAZ'}),
         create('items/qux.yml', {title: 'QUX'}),
       ])
-        .pipe(minisite({render: (_, tmplData) => {
-          expect(tmplData.pages).to.have.length(5);
-          return tmplData.page.title;
+        .pipe(minisite({render: context => {
+          if (!context.page.template) {
+            return context.page.body;
+          }
+          expect(context.pages).to.have.length(5);
+          return context.page.title;
         }}))
         .pipe(assert.length(5))
         .pipe(assert.first(file => {
@@ -1034,11 +1052,14 @@ describe('gulp-minisite', () => {
         .pipe(minisite({
           locales: ['en', 'ja'],
           defaultLocale: 'en',
-          render: (_, tmplData) => {
-            expect(tmplData.pages).to.have.length(5);
-            expect(tmplData.global['en'].pages).to.have.length(5);
-            expect(tmplData.global['ja'].pages).to.have.length(5);
-            return tmplData.page.title;
+          render: context => {
+            if (!context.page.template) {
+              return context.page.body;
+            }
+            expect(context.pages).to.have.length(5);
+            expect(context.global['en'].pages).to.have.length(5);
+            expect(context.global['ja'].pages).to.have.length(5);
+            return context.page.title;
           },
         }))
         .pipe(assert.length(10))
@@ -1060,10 +1081,13 @@ describe('gulp-minisite', () => {
         create('foo.yml', {template: true, title: 'FOO'}),
         create('bar/baz.yml', {title: 'BAZ'}),
       ])
-        .pipe(minisite({render: (_, tmplData) => {
-          expect(tmplData.references['foo'].title).to.equal('FOO');
-          expect(tmplData.references['bar/baz'].title).to.equal('BAZ');
-          return tmplData.page.title;
+        .pipe(minisite({render: context => {
+          if (!context.page.template) {
+            return context.page.body;
+          }
+          expect(context.references['foo'].title).to.equal('FOO');
+          expect(context.references['bar/baz'].title).to.equal('BAZ');
+          return context.page.title;
         }}))
         .pipe(assert.length(2))
         .pipe(assert.first(file => {
@@ -1082,13 +1106,16 @@ describe('gulp-minisite', () => {
         .pipe(minisite({
           locales: ['en', 'ja'],
           defaultLocale: 'en',
-          render: (_, tmplData) => {
-            expect(tmplData.references['foo'].title).to.equal('FOO');
-            expect(tmplData.global['en'].references['foo'].title).to.equal('FOO');
-            expect(tmplData.global['en'].references['bar/baz'].title).to.equal('BAZ');
-            expect(tmplData.global['ja'].references['foo'].title).to.equal('FOO J');
-            expect(tmplData.global['ja'].references['bar/baz'].title).to.equal('BAZ J');
-            return tmplData.page.title;
+          render: context => {
+            if (!context.page.template) {
+              return context.page.body;
+            }
+            expect(context.references['foo'].title).to.equal('FOO');
+            expect(context.global['en'].references['foo'].title).to.equal('FOO');
+            expect(context.global['en'].references['bar/baz'].title).to.equal('BAZ');
+            expect(context.global['ja'].references['foo'].title).to.equal('FOO J');
+            expect(context.global['ja'].references['bar/baz'].title).to.equal('BAZ J');
+            return context.page.title;
           },
         }))
         .pipe(assert.length(4))
@@ -1113,12 +1140,15 @@ describe('gulp-minisite', () => {
         create('products/category/foo.yml', {title: 'FOO'}),
         create('products/category/bar.yml', {title: 'BAR'}),
       ])
-        .pipe(minisite({render: (_, tmplData) => {
-          expect(tmplData.collections['items']).to.be.an('array');
-          expect(tmplData.collections['items']).to.have.length(3);
-          expect(tmplData.collections['products/category']).to.be.an('array');
-          expect(tmplData.collections['products/category']).to.have.length(2);
-          return tmplData.page.title;
+        .pipe(minisite({render: context => {
+          if (!context.page.template) {
+            return context.page.body;
+          }
+          expect(context.collections['items']).to.be.an('array');
+          expect(context.collections['items']).to.have.length(3);
+          expect(context.collections['products/category']).to.be.an('array');
+          expect(context.collections['products/category']).to.have.length(2);
+          return context.page.title;
         }}))
         .pipe(assert.length(5))
         .pipe(assert.first(file => {
@@ -1139,13 +1169,16 @@ describe('gulp-minisite', () => {
         .pipe(minisite({
           locales: ['en', 'ja'],
           defaultLocale: 'en',
-          render: (_, tmplData) => {
-            expect(tmplData.collections['items']).to.be.an('array');
-            expect(tmplData.global['en'].collections['items']).to.be.an('array');
-            expect(tmplData.global['en'].collections['items']).to.have.length(3);
-            expect(tmplData.global['ja'].collections['items']).to.be.an('array');
-            expect(tmplData.global['ja'].collections['items']).to.have.length(3);
-            return tmplData.page.title;
+          render: context => {
+            if (!context.page.template) {
+              return context.page.body;
+            }
+            expect(context.collections['items']).to.be.an('array');
+            expect(context.global['en'].collections['items']).to.be.an('array');
+            expect(context.global['en'].collections['items']).to.have.length(3);
+            expect(context.global['ja'].collections['items']).to.be.an('array');
+            expect(context.global['ja'].collections['items']).to.have.length(3);
+            return context.page.title;
           },
         }))
         .pipe(assert.length(6))
@@ -1161,13 +1194,16 @@ describe('gulp-minisite', () => {
         create('items/#3.baz.yml', {title: 'BAZ'}),
         create('items/#1.foo.yml', {title: 'FOO'}),
       ])
-        .pipe(minisite({render: (_, tmplData) => {
-          expect(tmplData.collections['items']).to.be.an('array');
-          expect(tmplData.collections['items']).to.have.length(3);
-          expect(tmplData.collections['items'][0].title).to.equal('FOO');
-          expect(tmplData.collections['items'][1].title).to.equal('BAR');
-          expect(tmplData.collections['items'][2].title).to.equal('BAZ');
-          return tmplData.page.title;
+        .pipe(minisite({render: context => {
+          if (!context.page.template) {
+            return context.page.body;
+          }
+          expect(context.collections['items']).to.be.an('array');
+          expect(context.collections['items']).to.have.length(3);
+          expect(context.collections['items'][0].title).to.equal('FOO');
+          expect(context.collections['items'][1].title).to.equal('BAR');
+          expect(context.collections['items'][2].title).to.equal('BAZ');
+          return context.page.title;
         }}))
         .pipe(assert.length(3))
         .pipe(assert.first(file => {

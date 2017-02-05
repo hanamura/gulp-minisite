@@ -165,13 +165,6 @@ module.exports = options => {
             if (!resource.document) {
               return Promise.resolve(resource);
             }
-            if (!resource.template) {
-              return Promise.resolve().then(() => {
-                resource._file.contents = new Buffer(resource.body, 'utf8');
-                return resource;
-              });
-            }
-
             const context = {
               page:        resource,
               site:        global[resource.locale].site,
@@ -181,7 +174,7 @@ module.exports = options => {
               global:      global,
             };
             return Promise.resolve()
-              .then(() => options.render(resource.template, context))
+              .then(() => options.render(context))
               .then(contents => {
                 resource._file.contents = new Buffer(contents, 'utf8');
                 return resource;
