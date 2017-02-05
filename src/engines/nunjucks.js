@@ -18,7 +18,7 @@ module.exports = options => {
   );
   env.addFilter('markdown', options.markdown);
 
-  return (tmplName, tmplData) => {
-    return env.render(tmplName, tmplData);
+  return context => {
+    return env.render(context.page.template, context);
   };
 };

@@ -181,7 +181,7 @@ module.exports = options => {
               global:      global,
             };
             return Promise.resolve()
-              .then(() => options.render(resource.template, context))
+              .then(() => options.render(context))
               .then(contents => {
                 resource._file.contents = new Buffer(contents, 'utf8');
                 return resource;
