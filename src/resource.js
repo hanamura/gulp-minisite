@@ -237,41 +237,17 @@ module.exports = class Resource {
     if (simple) {
       return `<Resource ${this._srcRelative}>`;
     }
-    const reduceArray = (array, value) => {
-      if (value === null) {
-        array.push(value);
-      } else if (value instanceof Resource) {
-        array.push(value.toString(true));
-      } else if (Array.isArray(value)) {
-        array.push(value.reduce(reduceArray, []));
-      } else if (typeof value === 'object') {
-        array.push(Object.keys(value).map(k => [k, value[k]]).reduce(reduceObject, {}));
-      } else {
-        array.push(value);
+
+    const json = JSON.stringify(Object.assign({}, this), (key, value) => {
+      if (key.startsWith('_')) {
+        return undefined;
       }
-      return array;
-    };
-    const reduceObject = (object, pair) => {
-      const key = pair[0];
-      const value = pair[1];
-      if (value === null) {
-        object[key] = value;
-      } else if (value instanceof Resource) {
-        object[key] = value.toString(true);
-      } else if (Array.isArray(value)) {
-        object[key] = value.reduce(reduceArray, []);
-      } else if (typeof value === 'object') {
-        object[key] = Object.keys(value).map(k => [k, value[k]]).reduce(reduceObject, {});
-      } else {
-        object[key] = value;
+      if (value instanceof Resource) {
+        return value.toString(true);
       }
-      return object;
-    };
-    const object = Object.keys(this)
-      .filter(k => !k.startsWith('_'))
-      .map(k => [k, this[k]])
-      .reduce(reduceObject, {});
-    return `<Resource ${this._srcRelative} ${JSON.stringify(object, null, 2)}>`;
+      return value;
+    }, 2);
+    return `<Resource ${this._srcRelative} ${json}>`
   }
 
 }
