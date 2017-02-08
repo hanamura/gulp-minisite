@@ -5,6 +5,7 @@ const Transform   = require('stream').Transform;
 const isEqual     = require('lodash.isequal');
 
 const Resource     = require('./resource');
+const assign       = require('./assign');
 const compareOrder = require('./compare-order');
 
 const PLUGIN_NAME = 'gulp-minisite';
@@ -19,6 +20,7 @@ module.exports = options => {
     draft:          false,
     dataExtensions: ['yml', 'yaml', 'json'],
     inject:         null,
+    model:          Resource,
   }, options);
 
   // template data
@@ -83,8 +85,7 @@ module.exports = options => {
     const resourceGroup = {};
     const filepaths = {};
 
-    const proceedFiles = files => {
-      let resources = files.map(file => new Resource(file, options));
+    const proceedResources = resources => {
       if (!options.draft) {
         resources = resources.filter(resource => !resource.draft);
       }
@@ -157,7 +158,21 @@ module.exports = options => {
 
     injects
       .reduce((promise, inject) => {
-        return promise.then(() => inject(global, options)).then(proceedFiles);
+        return promise
+          .then(() => inject(global, options))
+          .then(files => {
+            const model = options.model;
+            if (typeof model === 'function' && model.prototype instanceof Resource || model === Resource) {
+              return files.map(file => new model(file, options));
+            } else if (typeof model === 'function') {
+              return Promise.all(files.map(file => Promise.resolve(model(file, options))));
+            } else if (typeof model === 'object') {
+              return files
+                .map(file => new Resource(file, options))
+                .map(resource => assign(resource, model));
+            }
+          })
+          .then(proceedResources);
       }, Promise.resolve())
       .then(() => {
         const promises = storedResources
