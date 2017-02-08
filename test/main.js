@@ -1579,6 +1579,15 @@ describe('gulp-minisite', () => {
         .pipe(assert.end(done));
     });
 
+    it('should reject invalid model to throw PluginError', done => {
+      array([create('foo.yml', {title: 'Foo'})])
+        .pipe(minisite({model: 'model'}))
+        .on('error', e => {
+          expect(e).to.be.an.instanceof(PluginError);
+          done();
+        });
+    });
+
   });
 
 });

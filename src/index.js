@@ -170,6 +170,8 @@ module.exports = options => {
               return files
                 .map(file => new Resource(file, options))
                 .map(resource => assign(resource, model));
+            } else {
+              return Promise.reject(new Error('Invalid model'));
             }
           })
           .then(proceedResources);
