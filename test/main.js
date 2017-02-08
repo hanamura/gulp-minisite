@@ -9,6 +9,7 @@ const expect      = require('chai').expect;
 const groupBy     = require('lodash.groupby');
 const yaml        = require('js-yaml');
 
+const Resource       = require('../src/resource');
 const engineNunjucks = require('../src/engines/nunjucks');
 const minisite       = require('../src');
 
@@ -1463,6 +1464,117 @@ describe('gulp-minisite', () => {
         }))
         .pipe(assert.nth(2, file => {
           expect(file.path).to.equal('/root/base/world/index.html');
+        }))
+        .pipe(assert.end(done));
+    });
+
+  });
+
+  describe('custom model', () => {
+
+    it('should accept a subclass of Resource', done => {
+      const symbol = Symbol();
+      class MyResource extends Resource {
+        constructor(file, options) {
+          super(file, options);
+          this.bar = 'Bar';
+          this[symbol] = 'Symbol';
+        }
+        boldTitle() {
+          return `** ${this.title} **`;
+        }
+        get italicTitle() {
+          return `_ ${this.title} _`;
+        }
+      }
+      array([create('foo.yml', {title: 'Foo'})])
+        .pipe(minisite({model: MyResource}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(file => {
+          expect(file.data.bar).to.equal('Bar');
+          expect(file.data[symbol]).to.equal('Symbol');
+          expect(file.data.boldTitle()).to.equal('** Foo **');
+          expect(file.data.italicTitle).to.equal('_ Foo _');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should accept a function', done => {
+      const symbol = Symbol();
+      const model = (file, options) => {
+        const resource = new Resource(file, options);
+        resource.bar = 'Bar';
+        resource[symbol] = 'Symbol';
+        resource.boldTitle = function() {
+          return `** ${this.title} **`;
+        };
+        Object.defineProperty(resource, 'italicTitle', {
+          get: function() { return `_ ${this.title} _` },
+        });
+        return resource;
+      };
+      array([create('foo.yml', {title: 'Foo'})])
+        .pipe(minisite({model: model}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(file => {
+          expect(file.data.bar).to.equal('Bar');
+          expect(file.data[symbol]).to.equal('Symbol');
+          expect(file.data.boldTitle()).to.equal('** Foo **');
+          expect(file.data.italicTitle).to.equal('_ Foo _');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should accept a function which returns a Promise', done => {
+      const symbol = Symbol();
+      const model = (file, options) => {
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            const resource = new Resource(file, options);
+            resource.bar = 'Bar';
+            resource[symbol] = 'Symbol';
+            resource.boldTitle = function() {
+              return `** ${this.title} **`;
+            };
+            Object.defineProperty(resource, 'italicTitle', {
+              get: function() { return `_ ${this.title} _` },
+            });
+            resolve(resource);
+          }, 500);
+        });
+      };
+      array([create('foo.yml', {title: 'Foo'})])
+        .pipe(minisite({model: model}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(file => {
+          expect(file.data.bar).to.equal('Bar');
+          expect(file.data[symbol]).to.equal('Symbol');
+          expect(file.data.boldTitle()).to.equal('** Foo **');
+          expect(file.data.italicTitle).to.equal('_ Foo _');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should accept an object', done => {
+      const symbol = Symbol();
+      const model = {
+        bar: 'Bar',
+        [symbol]: 'Symbol',
+        boldTitle() {
+          return `** ${this.title} **`;
+        },
+        get italicTitle() {
+          return `_ ${this.title} _`;
+        },
+      };
+      array([create('foo.yml', {title: 'Foo'})])
+        .pipe(minisite({model: model}))
+        .pipe(assert.length(1))
+        .pipe(assert.first(file => {
+          expect(file.data.bar).to.equal('Bar');
+          expect(file.data[symbol]).to.equal('Symbol');
+          expect(file.data.boldTitle()).to.equal('** Foo **');
+          expect(file.data.italicTitle).to.equal('_ Foo _');
         }))
         .pipe(assert.end(done));
     });
