@@ -1468,6 +1468,19 @@ describe('gulp-minisite', () => {
         .pipe(assert.end(done));
     });
 
+    it('should accept a single file object', done => {
+      array([create('foo.yml')])
+        .pipe(minisite({
+          inject: () => create('bar.yml', {title: 'Bar'}),
+        }))
+        .pipe(assert.length(2))
+        .pipe(assert.second(file => {
+          expect(file.data.title).to.equal('Bar');
+          expect(file.data.path).to.equal('/bar');
+        }))
+        .pipe(assert.end(done));
+    });
+
   });
 
   describe('custom model', () => {
