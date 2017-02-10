@@ -1,5 +1,6 @@
 'use strict';
 
+const File        = require('gulp-util').File;
 const PluginError = require('gulp-util').PluginError;
 const Transform   = require('stream').Transform;
 const isEqual     = require('lodash.isequal');
@@ -162,6 +163,16 @@ module.exports = options => {
           .then(() => inject(global, options))
           .then(files => {
             files = Array.isArray(files) ? files : [files];
+
+            files = files.map(file => {
+              if (file instanceof File) return file;
+              if (typeof file !== 'object') throw new Error('Invalid file');
+
+              if (typeof file.contents === 'string') {
+                file.contents = new Buffer(file.contents, 'utf8');
+              }
+              return new File(file);
+            });
 
             const model = options.model;
             if (typeof model === 'function' && model.prototype instanceof Resource || model === Resource) {

@@ -1481,6 +1481,30 @@ describe('gulp-minisite', () => {
         .pipe(assert.end(done));
     });
 
+    it('should accept a plain object', done => {
+      array([create('foo.yml')])
+        .pipe(minisite({
+          inject: () => ({path: 'bar.yml', contents: 'title: Bar'}),
+        }))
+        .pipe(assert.length(2))
+        .pipe(assert.second(file => {
+          expect(file.data.title).to.equal('Bar');
+          expect(file.data.path).to.equal('/bar');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should reject an invalid object to throw PluginError', done => {
+      array([create('foo.yml')])
+        .pipe(minisite({
+          inject: () => 'invalid value',
+        }))
+        .on('error', e => {
+          expect(e).to.be.an.instanceof(PluginError);
+          done();
+        });
+    });
+
   });
 
   describe('custom model', () => {
