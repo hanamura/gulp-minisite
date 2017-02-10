@@ -222,3 +222,7 @@ module.exports = options => {
   });
   return stream;
 };
+
+module.exports.Resource = Resource;
+module.exports.engines = {};
+module.exports.engines.nunjucks = require('./engines/nunjucks');

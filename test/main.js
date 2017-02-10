@@ -1603,4 +1603,16 @@ describe('gulp-minisite', () => {
 
   });
 
+  describe('modules', () => {
+
+    it('should have minisite.Resource', () => {
+      expect(minisite.Resource).to.equal(Resource);
+    });
+
+    it('should have minisite.engines.nunjucks', () => {
+      expect(minisite.engines.nunjucks).to.equal(engineNunjucks);
+    });
+
+  });
+
 });
