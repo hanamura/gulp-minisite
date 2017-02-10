@@ -10,7 +10,7 @@ module.exports = class Resource {
   // options: object
   // options.locales: [...string]?
   // options.defaultLocale: string?
-  // options.dataExtensions: [...string]?
+  // options.documentTypes: [...string]?
   constructor(file, options) {
     this._file    = file;
     this._options = options || (options = {});
@@ -79,7 +79,7 @@ module.exports = class Resource {
 
     // # document
     //
-    if (options.dataExtensions && ~options.dataExtensions.indexOf(srcExtname)) {
+    if (options.documentTypes && ~options.documentTypes.indexOf(srcExtname)) {
       this.document = true;
     } else {
       this.document = false;

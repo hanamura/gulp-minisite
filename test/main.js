@@ -63,7 +63,7 @@ describe('gulp-minisite', () => {
 
     it('should strip front matter', done => {
       array([create('hello.md', {title: 'hello'}, 'body')])
-        .pipe(minisite({dataExtensions: ['md']}))
+        .pipe(minisite({documentTypes: ['md']}))
         .pipe(assert.length(1))
         .pipe(assert.first(file => {
           expect(file.contents.toString().trim()).to.equal('body');
@@ -149,12 +149,12 @@ describe('gulp-minisite', () => {
         .pipe(assert.end(done));
     });
 
-    it('should not treat YAML as document if dataExtensions is null', done => {
+    it('should not treat YAML as document if documentTypes is null', done => {
       array([create('hello.yml', {
         title: 'Hello',
         description: 'Hello World',
       })])
-        .pipe(minisite({dataExtensions: null}))
+        .pipe(minisite({documentTypes: null}))
         .pipe(assert.length(1))
         .pipe(assert.first(file => {
           expect(file.data.document).to.be.false;
@@ -418,7 +418,7 @@ describe('gulp-minisite', () => {
       }, 'Hello **World**')])
         .pipe(minisite({
           render: engineNunjucks({path: 'test/tmpl-markdown'}),
-          dataExtensions: ['md'],
+          documentTypes: ['md'],
         }))
         .pipe(assert.length(1))
         .pipe(assert.first(file => {
@@ -832,7 +832,7 @@ describe('gulp-minisite', () => {
         create('foo.yml', {}),
         create('bar.md', {}, 'Bar'),
       ])
-        .pipe(minisite({dataExtensions: ['yml', 'md']}))
+        .pipe(minisite({documentTypes: ['yml', 'md']}))
         .pipe(assert.length(2))
         .pipe(assert.first(file => {
           expect(file.data.body).to.equal('');
@@ -1479,6 +1479,30 @@ describe('gulp-minisite', () => {
           expect(file.data.path).to.equal('/bar');
         }))
         .pipe(assert.end(done));
+    });
+
+    it('should accept a plain object', done => {
+      array([create('foo.yml')])
+        .pipe(minisite({
+          inject: () => ({path: 'bar.yml', contents: 'title: Bar'}),
+        }))
+        .pipe(assert.length(2))
+        .pipe(assert.second(file => {
+          expect(file.data.title).to.equal('Bar');
+          expect(file.data.path).to.equal('/bar');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should reject an invalid object to throw PluginError', done => {
+      array([create('foo.yml')])
+        .pipe(minisite({
+          inject: () => 'invalid value',
+        }))
+        .on('error', e => {
+          expect(e).to.be.an.instanceof(PluginError);
+          done();
+        });
     });
 
   });
