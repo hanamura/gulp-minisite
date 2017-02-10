@@ -9,9 +9,9 @@ const expect      = require('chai').expect;
 const groupBy     = require('lodash.groupby');
 const yaml        = require('js-yaml');
 
-const Resource       = require('../src/resource');
-const engineNunjucks = require('../src/engines/nunjucks');
-const minisite       = require('../src');
+const Resource       = require('../resource');
+const engineNunjucks = require('../engines/nunjucks');
+const minisite       = require('../minisite');
 
 const create = (filename, attr, body) => {
   const contents = [];
@@ -1623,6 +1623,18 @@ describe('gulp-minisite', () => {
           expect(e).to.be.an.instanceof(PluginError);
           done();
         });
+    });
+
+  });
+
+  describe('modules', () => {
+
+    it('should have minisite.Resource', () => {
+      expect(minisite.Resource).to.equal(Resource);
+    });
+
+    it('should have minisite.engines.nunjucks', () => {
+      expect(minisite.engines.nunjucks).to.equal(engineNunjucks);
     });
 
   });
