@@ -13,14 +13,14 @@ const PLUGIN_NAME = 'gulp-minisite';
 module.exports = options => {
 
   options = Object.assign({
-    defaultLocale:  null,
-    locales:        null,
-    site:           null,
-    render:         require('./engines/nunjucks')(),
-    draft:          false,
-    dataExtensions: ['yml', 'yaml', 'json'],
-    inject:         null,
-    model:          Resource,
+    defaultLocale: null,
+    locales:       null,
+    site:          null,
+    render:        require('./engines/nunjucks')(),
+    draft:         false,
+    documentTypes: ['yml', 'yaml', 'json'],
+    inject:        null,
+    model:         Resource,
   }, options);
 
   // template data
