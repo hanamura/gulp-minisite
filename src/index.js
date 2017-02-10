@@ -161,6 +161,8 @@ module.exports = options => {
         return promise
           .then(() => inject(global, options))
           .then(files => {
+            files = Array.isArray(files) ? files : [files];
+
             const model = options.model;
             if (typeof model === 'function' && model.prototype instanceof Resource || model === Resource) {
               return files.map(file => new model(file, options));
