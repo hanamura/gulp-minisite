@@ -27,24 +27,18 @@ module.exports = class Resource {
     // - 'foo'
     // - 'foo.en'
     // - '#001.foo.en'
-    // - '_#001.foo.en'
     const srcBasename = path.basename(file.relative, path.extname(file.relative));
 
     // example:
     // - []
     // - ['foo']
     // - ['foo', 'bar']
-    // - ['foo', 'bar', '_baz']
     const srcDirnames = path.dirname(file.relative).split(path.sep).filter(x => x !== '.');
 
-    const matches = srcBasename.match(/^_?(?:#([^.]*)\.)?(.+?)(?:\.([^.]+))?$/);
+    const matches = srcBasename.match(/^(?:#([^.]*)\.)?(.+?)(?:\.([^.]+))?$/);
     const order   = matches[1];
     const slug    = matches[2];
     const locale  = matches[3];
-
-    // # draft
-    //
-    this.draft = srcDirnames.concat([srcBasename]).some(x => x.startsWith('_'));
 
     // # order
     //
@@ -105,7 +99,7 @@ module.exports = class Resource {
     if (this.locale && this.locale !== options.defaultLocale) {
       this.dirnames.push(this.locale);
     }
-    this.dirnames.push.apply(this.dirnames, srcDirnames.map(x => x.replace(/^_/g, '')));
+    this.dirnames.push.apply(this.dirnames, srcDirnames);
     if (this.document && !this.index) {
       this.dirnames.push(this.slug);
     }
