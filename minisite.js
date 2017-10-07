@@ -18,7 +18,6 @@ module.exports = options => {
     locales:       null,
     site:          null,
     render:        require('./engines/nunjucks')(),
-    draft:         false,
     documentTypes: ['yml', 'yaml', 'json'],
     inject:        null,
     model:         Resource,
@@ -87,10 +86,6 @@ module.exports = options => {
     const filepaths = {};
 
     const proceedResources = resources => {
-      if (!options.draft) {
-        resources = resources.filter(resource => !resource.draft);
-      }
-
       resources.forEach(resource => resource._file.data = resource);
 
       // check duplicates, resource._file.path

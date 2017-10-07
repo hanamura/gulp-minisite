@@ -297,47 +297,6 @@ describe('gulp-minisite', () => {
 
   });
 
-  // draft
-  // -----
-
-  describe('filename/filepath transformer (draft)', () => {
-
-    it('should not output draft by default', done => {
-      array([create('_hello.yml', {})])
-        .pipe(minisite())
-        .pipe(assert.length(0))
-        .pipe(assert.end(done));
-    });
-
-    it('should output draft if specified', done => {
-      array([create('_hello.yml', {})])
-        .pipe(minisite({draft: true}))
-        .pipe(assert.length(1))
-        .pipe(assert.first(file => {
-          expect(file.data.draft).to.be.true;
-        }))
-        .pipe(assert.end(done));
-    });
-
-    it('should strip underscore from filename of draft', done => {
-      array([create('_hello.yml', {})])
-        .pipe(minisite({draft: true}))
-        .pipe(assert.length(1))
-        .pipe(assert.first(file => {
-          expect(file.path).to.equal('/root/base/hello/index.html');
-        }))
-        .pipe(assert.end(done));
-    })
-
-    it('should treat document as draft if any parent directory is marked as draft', done => {
-      array([create('path/_to/hello.yml', {})])
-        .pipe(minisite())
-        .pipe(assert.length(0))
-        .pipe(assert.end(done));
-    });
-
-  });
-
   // template engine
   // ===============
 
@@ -635,22 +594,6 @@ describe('gulp-minisite', () => {
         .pipe(assert.second(file => {
           expect(file.data.order).to.not.be.null;
           expect(file.data.order).to.equal('1');
-        }))
-        .pipe(assert.end(cb));
-    });
-
-    it('should have draft property', cb => {
-      array([
-        create('foo.yml', {}),
-        create('_bar.yml', {}),
-      ])
-        .pipe(minisite({draft: true}))
-        .pipe(assert.length(2))
-        .pipe(assert.first(file => {
-          expect(file.data.draft).to.be.false;
-        }))
-        .pipe(assert.second(file => {
-          expect(file.data.draft).to.be.true;
         }))
         .pipe(assert.end(cb));
     });
