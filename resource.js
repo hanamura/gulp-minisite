@@ -35,10 +35,18 @@ module.exports = class Resource {
     // - ['foo', 'bar']
     const srcDirnames = path.dirname(file.relative).split(path.sep).filter(x => x !== '.');
 
-    const matches = srcBasename.match(/^(?:#([^.]*)\.)?(.+?)(?:\.([^.]+))?$/);
-    const order   = matches[1];
-    const slug    = matches[2];
-    const locale  = matches[3];
+    const matches = srcBasename.match(/^(\.)?(?:#([^.]*)\.)?(.+?)(?:\.([^.]+))?$/);
+    const hidden  = !!matches[1];
+    const order   = matches[2];
+    const slug    = matches[3];
+    const locale  = matches[4];
+
+    // # hidden
+    //
+    // example:
+    // - true
+    // - false
+    this.hidden = hidden;
 
     // # order
     //

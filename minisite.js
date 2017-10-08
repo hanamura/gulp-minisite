@@ -186,6 +186,15 @@ module.exports = options => {
       }, Promise.resolve())
       .then(() => {
         const promises = storedResources
+          .filter(resource => {
+            if (!resource.document) {
+              return true;
+            }
+            if (!resource.hidden) {
+              return true;
+            }
+            return false;
+          })
           .map(resource => {
             if (!resource.document) {
               return Promise.resolve(resource);
