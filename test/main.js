@@ -297,6 +297,52 @@ describe('gulp-minisite', () => {
 
   });
 
+  // hidden
+  // ======
+
+  describe('filename/filepath transformer (hidden)', () => {
+    it('should not output files for hidden documents', cb => {
+      array([create('.foo.yml', {})])
+        .pipe(minisite())
+        .pipe(assert.length(0))
+        .pipe(assert.end(cb));
+    });
+
+    it('should have access to hidden documents', cb => {
+      array([
+        create('items.yml', {}),
+        create('items/.foo.yml', {childItem: true}),
+        create('items/.bar.yml', {childItem: true}),
+        create('items/.baz.yml', {childItem: true}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(1))
+        .pipe(assert.first(file => {
+          expect(file.data.slug).to.equal('items');
+          expect(file.data.collection).to.have.lengthOf(3);
+          expect(file.data.collection[0].childItem).to.be.true;
+        }))
+        .pipe(assert.end(cb));
+    });
+
+    it('should accept order part after hidden dot', cb => {
+      array([
+        create('items.yml', {}),
+        create('items/.#001.foo.yml', {title: 'FOO'}),
+        create('items/.#002.bar.yml', {title: 'BAR'}),
+        create('items/.#003.baz.yml', {title: 'BAZ'}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(1))
+        .pipe(assert.first(file => {
+          expect(file.data.collection[0].title).to.equal('FOO');
+          expect(file.data.collection[1].title).to.equal('BAR');
+          expect(file.data.collection[2].title).to.equal('BAZ');
+        }))
+        .pipe(assert.end(cb));
+    });
+  });
+
   // template engine
   // ===============
 
@@ -594,6 +640,22 @@ describe('gulp-minisite', () => {
         .pipe(assert.second(file => {
           expect(file.data.order).to.not.be.null;
           expect(file.data.order).to.equal('1');
+        }))
+        .pipe(assert.end(cb));
+    });
+
+    it('should have hidden property', cb => {
+      array([
+        create('items.yml', {}),
+        create('items/.foo.yml', {}),
+      ])
+        .pipe(minisite())
+        .pipe(assert.length(1))
+        .pipe(assert.first(file => {
+          expect(file.data.hidden).to.be.a('boolean');
+          expect(file.data.hidden).to.be.false;
+          expect(file.data.collection[0].hidden).to.be.a('boolean');
+          expect(file.data.collection[0].hidden).to.be.true;
         }))
         .pipe(assert.end(cb));
     });
