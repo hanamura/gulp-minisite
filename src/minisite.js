@@ -164,7 +164,7 @@ module.exports = options => {
               if (typeof file !== 'object') throw new Error('Invalid file');
 
               if (typeof file.contents === 'string') {
-                file.contents = new Buffer(file.contents, 'utf8');
+                file.contents = Buffer.from(file.contents);
               }
               return new File(file);
             });
@@ -210,7 +210,7 @@ module.exports = options => {
             return Promise.resolve()
               .then(() => options.render(context))
               .then(contents => {
-                resource._file.contents = new Buffer(contents, 'utf8');
+                resource._file.contents = Buffer.from(contents);
                 return resource;
               });
           });
