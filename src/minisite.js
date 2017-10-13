@@ -26,7 +26,7 @@ module.exports = options => {
   // template data
   // =============
 
-  const locales = [''].concat(options.locales || []);
+  const locales = ['', ...options.locales];
 
   const multilocaleSite = (
     locales.length > 1 &&
