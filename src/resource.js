@@ -58,7 +58,7 @@ module.exports = class Resource {
 
     // # slug, locale
     //
-    if (options.locales && ~options.locales.indexOf(locale)) {
+    if (options.locales && options.locales.includes(locale)) {
 
       // example:
       // - 'foo'
@@ -81,7 +81,7 @@ module.exports = class Resource {
 
     // # document
     //
-    if (options.documentTypes && ~options.documentTypes.indexOf(srcExtname)) {
+    if (options.documentTypes && options.documentTypes.includes(srcExtname)) {
       this.document = true;
     } else {
       this.document = false;
