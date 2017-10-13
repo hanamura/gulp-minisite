@@ -15,7 +15,7 @@ module.exports = (options = {}) => {
   options = Object.assign({
     defaultLocale: null,
     locales:       [],
-    site:          null,
+    site:          {},
     render:        require('../engines/nunjucks')(),
     documentTypes: ['yml', 'yaml', 'json'],
     inject:        null,
@@ -30,7 +30,7 @@ module.exports = (options = {}) => {
   const multilocaleSite = (
     locales.length > 1 &&
     isEqual(
-      Object.keys(options.site || {}).filter(x => x).sort(),
+      Object.keys(options.site).filter(x => x).sort(),
       options.locales.slice().sort()
     )
   );
