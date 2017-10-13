@@ -17,7 +17,7 @@ module.exports = options => {
     defaultLocale: null,
     locales:       null,
     site:          null,
-    render:        require('./engines/nunjucks')(),
+    render:        require('../engines/nunjucks')(),
     documentTypes: ['yml', 'yaml', 'json'],
     inject:        null,
     model:         Resource,
@@ -240,4 +240,4 @@ module.exports = options => {
 
 module.exports.Resource = Resource;
 module.exports.engines = {};
-module.exports.engines.nunjucks = require('./engines/nunjucks');
+module.exports.engines.nunjucks = require('../engines/nunjucks');
