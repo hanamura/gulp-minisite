@@ -11,12 +11,11 @@ const compareOrder = require('./compare-order');
 
 const PLUGIN_NAME = 'gulp-minisite';
 
-module.exports = options => {
-
+module.exports = (options = {}) => {
   options = Object.assign({
     defaultLocale: null,
-    locales:       null,
-    site:          null,
+    locales:       [],
+    site:          {},
     render:        require('../engines/nunjucks')(),
     documentTypes: ['yml', 'yaml', 'json'],
     inject:        null,
@@ -26,12 +25,12 @@ module.exports = options => {
   // template data
   // =============
 
-  const locales = [''].concat(options.locales || []);
+  const locales = ['', ...options.locales];
 
   const multilocaleSite = (
     locales.length > 1 &&
     isEqual(
-      Object.keys(options.site || {}).filter(x => x).sort(),
+      Object.keys(options.site).filter(x => x).sort(),
       options.locales.slice().sort()
     )
   );
@@ -76,7 +75,7 @@ module.exports = options => {
 
     const injects = [() => files.slice()];
     if (options.inject && Array.isArray(options.inject)) {
-      injects.push.apply(injects, options.inject);
+      injects.push(...options.inject);
     } else if (options.inject) {
       injects.push(options.inject);
     }
@@ -149,7 +148,7 @@ module.exports = options => {
         }
       });
 
-      storedResources.push.apply(storedResources, resources);
+      storedResources.push(...resources);
     };
 
     injects
@@ -164,7 +163,7 @@ module.exports = options => {
               if (typeof file !== 'object') throw new Error('Invalid file');
 
               if (typeof file.contents === 'string') {
-                file.contents = new Buffer(file.contents, 'utf8');
+                file.contents = Buffer.from(file.contents);
               }
               return new File(file);
             });
@@ -210,7 +209,7 @@ module.exports = options => {
             return Promise.resolve()
               .then(() => options.render(context))
               .then(contents => {
-                resource._file.contents = new Buffer(contents, 'utf8');
+                resource._file.contents = Buffer.from(contents);
                 return resource;
               });
           });
