@@ -187,9 +187,9 @@ module.exports = class Resource {
     if (this.document) {
       const contents = file.contents.toString();
       if (fm.test(contents)) {
-        const fmData = fm(contents);
-        this.data = fmData.attributes;
-        this.body = fmData.body;
+        const {attributes, body} = fm(contents);
+        this.data = attributes;
+        this.body = body;
       } else {
         this.data = yaml.safeLoad(contents);
         this.body = '';
