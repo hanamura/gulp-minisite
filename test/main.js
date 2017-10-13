@@ -350,7 +350,7 @@ describe('gulp-minisite', () => {
 
     it('should render content by default', done => {
       array([create('hello.yml', {
-        template: 'hello.html',
+        template: 'hello.njk',
         title: 'Hello',
         description: 'World',
       })])
@@ -389,7 +389,7 @@ describe('gulp-minisite', () => {
 
     it('should inherit template', done => {
       array([create('hello.yml', {
-        template: 'pages/hello.html',
+        template: 'pages/hello.njk',
         title: 'Hello',
       })])
         .pipe(minisite({
@@ -404,7 +404,7 @@ describe('gulp-minisite', () => {
 
     it('should include template', done => {
       array([create('hello.yml', {
-        template: 'pages/hello.html',
+        template: 'pages/hello.njk',
         title: 'Hello',
       })])
         .pipe(minisite({
@@ -419,7 +419,7 @@ describe('gulp-minisite', () => {
 
     it('should have markdown filter by default', done => {
       array([create('hello.md', {
-        template: 'hello.html',
+        template: 'hello.njk',
       }, 'Hello **World**')])
         .pipe(minisite({
           render: engineNunjucks({path: 'test/tmpl-markdown'}),
@@ -434,7 +434,7 @@ describe('gulp-minisite', () => {
 
     it('should make markdown filter not to throw error even if empty string, null, or undefined is passed', done => {
       array([create('hello.yml', {
-        template: 'hello.html',
+        template: 'hello.njk',
         emptyString: '',
         nullValue: null,
       })])
@@ -447,7 +447,7 @@ describe('gulp-minisite', () => {
 
     it('should render content asynchronously', done => {
       array([create('hello.yml', {
-        template: 'hello.html',
+        template: 'hello.njk',
         title: 'Hello',
         description: 'World',
       })])
