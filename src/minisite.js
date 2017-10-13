@@ -15,7 +15,7 @@ module.exports = options => {
 
   options = Object.assign({
     defaultLocale: null,
-    locales:       null,
+    locales:       [],
     site:          null,
     render:        require('../engines/nunjucks')(),
     documentTypes: ['yml', 'yaml', 'json'],
