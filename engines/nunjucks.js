@@ -4,13 +4,13 @@ const marked   = require('marked');
 const nunjucks = require('nunjucks');
 const path     = require('path');
 
-module.exports = options => {
-  options || (options = {});
-  options.path || (options.path = 'template');
-  options.markdown || (options.markdown = str => {
-    if (!str) return str;
-    return new nunjucks.runtime.SafeString(marked(str));
-  });
+module.exports = (options = {}) => {
+  options = Object.assign({
+    path: 'template',
+    markdown: str => {
+      return str ? new nunjucks.runtime.SafeString(marked(str)) : str;
+    }
+  }, options);
 
   const env = new nunjucks.Environment(
     new nunjucks.FileSystemLoader(options.path),
