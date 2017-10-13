@@ -76,7 +76,7 @@ module.exports = options => {
 
     const injects = [() => files.slice()];
     if (options.inject && Array.isArray(options.inject)) {
-      injects.push.apply(injects, options.inject);
+      injects.push(...options.inject);
     } else if (options.inject) {
       injects.push(options.inject);
     }
@@ -149,7 +149,7 @@ module.exports = options => {
         }
       });
 
-      storedResources.push.apply(storedResources, resources);
+      storedResources.push(...resources);
     };
 
     injects

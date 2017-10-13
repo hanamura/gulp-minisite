@@ -107,7 +107,7 @@ module.exports = class Resource {
     if (this.locale && this.locale !== options.defaultLocale) {
       this.dirnames.push(this.locale);
     }
-    this.dirnames.push.apply(this.dirnames, srcDirnames);
+    this.dirnames.push(...srcDirnames);
     if (this.document && !this.index) {
       this.dirnames.push(this.slug);
     }
@@ -121,14 +121,14 @@ module.exports = class Resource {
       // - '/foo/bar'
       // - '/foo/bar/baz'
       // - '/en/foo/bar/baz'
-      this.path = path.join.apply(path, ['/'].concat(this.dirnames));
+      this.path = path.join('/', ...this.dirnames);
     } else {
       // example:
       // - '/foo.html'
       // - '/foo/bar.json'
       // - '/foo/bar/baz.jpg'
       // - '/en/foo/bar/baz.mp3'
-      this.path = path.join.apply(path, ['/'].concat(this.dirnames, [`${this.slug}.${srcExtname}`]));
+      this.path = path.join('/', ...this.dirnames, `${this.slug}.${srcExtname}`);
     }
 
     // # filepath
@@ -140,14 +140,14 @@ module.exports = class Resource {
       // - '/root/user/project/foo/bar/index.html'
       // - '/root/user/project/foo/bar/baz/index.html'
       // - '/root/user/project/en/foo/bar/baz/index.html'
-      this.filepath = path.join.apply(path, [file.base].concat(this.dirnames, ['index.html']));
+      this.filepath = path.join(file.base, ...this.dirnames, 'index.html');
     } else {
       // example:
       // - '/root/user/project/foo.html'
       // - '/root/user/project/foo/bar.json'
       // - '/root/user/project/foo/bar/baz.jpg'
       // - '/root/user/project/en/foo/bar/baz.jpg'
-      this.filepath = path.join.apply(path, [file.base].concat(this.dirnames, [`${this.slug}.${srcExtname}`]));
+      this.filepath = path.join(file.base, ...this.dirnames, `${this.slug}.${srcExtname}`);
     }
 
     // # resourceId
