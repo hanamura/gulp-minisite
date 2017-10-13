@@ -11,8 +11,7 @@ const compareOrder = require('./compare-order');
 
 const PLUGIN_NAME = 'gulp-minisite';
 
-module.exports = options => {
-
+module.exports = (options = {}) => {
   options = Object.assign({
     defaultLocale: null,
     locales:       [],
