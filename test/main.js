@@ -734,20 +734,24 @@ describe('gulp-minisite', () => {
 
     it('should have path property', cb => {
       array([
+        create('index.yml', {}),
         create('foo.yml', {}),
         create('foo/bar.yml', {}),
         create('foo/bar/baz.yml', {}),
       ])
         .pipe(minisite())
-        .pipe(assert.length(3))
+        .pipe(assert.length(4))
         .pipe(assert.first(file => {
-          expect(file.data.path).to.equal('/foo');
+          expect(file.data.path).to.equal('/');
         }))
         .pipe(assert.second(file => {
-          expect(file.data.path).to.equal('/foo/bar');
+          expect(file.data.path).to.equal('/foo/');
         }))
         .pipe(assert.nth(2, file => {
-          expect(file.data.path).to.equal('/foo/bar/baz');
+          expect(file.data.path).to.equal('/foo/bar/');
+        }))
+        .pipe(assert.nth(3, file => {
+          expect(file.data.path).to.equal('/foo/bar/baz/');
         }))
         .pipe(assert.end(cb));
     });
@@ -1481,7 +1485,7 @@ describe('gulp-minisite', () => {
         .pipe(assert.length(2))
         .pipe(assert.second(file => {
           expect(file.data.title).to.equal('Bar');
-          expect(file.data.path).to.equal('/bar');
+          expect(file.data.path).to.equal('/bar/');
         }))
         .pipe(assert.end(done));
     });
@@ -1494,7 +1498,7 @@ describe('gulp-minisite', () => {
         .pipe(assert.length(2))
         .pipe(assert.second(file => {
           expect(file.data.title).to.equal('Bar');
-          expect(file.data.path).to.equal('/bar');
+          expect(file.data.path).to.equal('/bar/');
         }))
         .pipe(assert.end(done));
     });

@@ -117,11 +117,11 @@ module.exports = class Resource {
     if (this.document) {
       // example:
       // - '/'
-      // - '/foo'
-      // - '/foo/bar'
-      // - '/foo/bar/baz'
-      // - '/en/foo/bar/baz'
-      this.path = path.join('/', ...this.dirnames);
+      // - '/foo/'
+      // - '/foo/bar/'
+      // - '/foo/bar/baz/'
+      // - '/en/foo/bar/baz/'
+      this.path = path.join('/', ...this.dirnames, '/');
     } else {
       // example:
       // - '/foo.html'
